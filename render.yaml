@@ -1,0 +1,24 @@
+# Plan de deploiement Render (Blueprint) : un service web Docker gratuit.
+# La base PostGIS est hebergee chez Neon (gratuit, sans expiration) : collez son adresse dans DATABASE_URL.
+services:
+  - type: web
+    name: geoportail-thies
+    runtime: docker
+    plan: free
+    region: frankfurt
+    healthCheckPath: /
+    envVars:
+      - key: DATABASE_URL
+        sync: false              # a saisir dans Render : adresse de connexion Neon
+      - key: DJANGO_SECRET_KEY
+        generateValue: true
+      - key: DJANGO_DEBUG
+        value: "False"
+      - key: DJANGO_ALLOWED_HOSTS
+        value: ".onrender.com"
+      - key: DJANGO_SUPERUSER_USERNAME
+        value: admin
+      - key: DJANGO_SUPERUSER_EMAIL
+        value: admin@example.com
+      - key: DJANGO_SUPERUSER_PASSWORD
+        sync: false              # a saisir dans Render
