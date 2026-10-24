@@ -1,0 +1,63 @@
+{% extends "portail/base.html" %}
+{% load static %}
+{% block title %}Tableau de bord · Géoportail santé Thiès{% endblock %}
+
+{% block content %}
+<main class="dash">
+  <header class="dash-head">
+    <h1>Tableau de bord</h1>
+    <p>Suivi opérationnel des 28 postes de santé : personnel et normes de l'OMS, services, équipements et profil des patients enquêtés.
+      Les analyses spatiales du mémoire (couverture, aires de desserte, typologie) sont dans la page <a href="{% url 'statistiques' %}">Statistiques</a>.</p>
+  </header>
+  <section class="kpis" id="kpis"><div class="loading">Chargement…</div></section>
+
+  <h2 class="dash-t">Personnel et normes de l'OMS</h2>
+  <section class="grid">
+    <article class="card-chart"><h3>Personnel par commune</h3><canvas id="c-personnel"></canvas></article>
+    <article class="card-chart"><h3>Respect des normes par poste <small>(nombre de postes sur 28)</small></h3><canvas id="c-normes"></canvas></article>
+    <article class="card-chart wide"><h3>Habitants par infirmier et par poste <small>(norme OMS : 5 000)</small></h3><canvas id="c-ratio"></canvas></article>
+  </section>
+  <section class="tables">
+    <article class="card-table">
+      <h3>Personnel, lits et patients par commune</h3>
+      <div class="scroll"><table id="t-commune"></table></div>
+    </article>
+    <article class="card-table">
+      <div class="th-row"><h3>Postes de santé et normes OMS</h3>
+        <input id="t-filtre" type="search" placeholder="Filtrer…" aria-label="Filtrer les postes"></div>
+      <div class="scroll"><table id="t-postes"></table></div>
+      <p class="hint" id="note-tech"></p>
+    </article>
+  </section>
+
+  <h2 class="dash-t">Services et équipements</h2>
+  <section class="grid">
+    <article class="card-chart"><h3>Services disponibles <small>(nombre de postes)</small></h3><canvas id="c-services"></canvas></article>
+    <article class="card-chart"><h3>Équipements <small>(total)</small></h3><canvas id="c-equip"></canvas></article>
+    <article class="card-chart"><h3>Lits par poste</h3><canvas id="c-lits"></canvas></article>
+  </section>
+
+  <h2 class="dash-t">Enquête auprès des patients</h2>
+  <section class="grid">
+    <article class="card-chart"><h3>Patients enquêtés par commune</h3><canvas id="c-commune"></canvas></article>
+    <article class="card-chart"><h3>Sexe des patients</h3><canvas id="c-sexe"></canvas></article>
+    <article class="card-chart"><h3>Âge des patients</h3><canvas id="c-age"></canvas></article>
+    <article class="card-chart"><h3>Niveau d'instruction</h3><canvas id="c-instruction"></canvas></article>
+    <article class="card-chart"><h3>Moyen de transport</h3><canvas id="c-transport"></canvas></article>
+    <article class="card-chart"><h3>Distance déclarée jusqu'au poste</h3><canvas id="c-distance"></canvas></article>
+    <article class="card-chart"><h3>Raisons du choix du poste</h3><canvas id="c-raisons"></canvas></article>
+    <article class="card-chart"><h3>Quartiers de provenance les plus cités</h3><canvas id="c-provenance"></canvas></article>
+  </section>
+
+  <h2 class="dash-t">Qualité des données</h2>
+  <section class="grid">
+    <article class="card-table wide"><h3>Données renseignées dans l'enquête patients <small>(sur <span id="q-total">—</span> patients)</small></h3>
+      <div class="scroll"><table id="t-qualite"></table></div>
+      <div id="q-notes" class="q-notes"></div></article>
+  </section>
+</main>
+{% endblock %}
+
+{% block scripts %}
+<script src="{% static 'portail/js/dashboard.js' %}"></script>
+{% endblock %}

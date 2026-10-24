@@ -1,0 +1,319 @@
+{% extends "portail/base.html" %}
+{% load static %}
+
+{% block head %}<link rel="stylesheet" href="{% static 'portail/css/carte.css' %}">{% endblock %}
+
+{% block topbar_extra %}
+  <div class="search">
+    <span class="s-ico" aria-hidden="true">⌕</span>
+    <input id="search" type="search" placeholder="Rechercher un poste ou un quartier…" autocomplete="off" aria-label="Recherche">
+    <ul id="search-results" class="search-results hidden"></ul>
+  </div>
+{% endblock %}
+
+{% block title %}Géoportail · Maille sanitaire de Thiès{% endblock %}
+
+
+
+{% block footer %}{% endblock %}
+
+{% block content %}
+<div class="cockpit" id="app">
+
+  <!-- =================== COLONNE GAUCHE : couches + filtres =================== -->
+  <aside class="lcol" id="panel">
+
+    <section class="gcard">
+      <header class="gcard-h"><span class="gico">◈</span><h2>Couches</h2></header>
+      <div class="layers" id="catalogue">
+
+        <div class="layer on" data-id="quartiers">
+          <span class="lico" style="--c:#2563eb">▦</span>
+          <label class="lname" for="chk-quartiers">Quartiers (thématique)</label>
+          <label class="switch"><input type="checkbox" id="chk-quartiers" checked><span class="slider"></span></label>
+          <button class="kebab" type="button" aria-label="Options de la couche Quartiers" aria-expanded="false">⋮</button>
+          <div class="lopts hidden">
+            <label class="olbl">Indicateur</label>
+            <select id="ind-quartier" aria-label="Indicateur des quartiers"></select>
+            <label class="olbl">Opacité <input type="range" class="opac-range" min="0.1" max="1" step="0.05" value="1"></label>
+          </div>
+        </div>
+
+        <div class="layer on" data-id="postes">
+          <span class="lico" style="--c:#10b981">✚</span>
+          <label class="lname" for="chk-postes">Postes de santé</label>
+          <label class="switch"><input type="checkbox" id="chk-postes" checked><span class="slider"></span></label>
+          <button class="kebab" type="button" aria-label="Options de la couche Postes" aria-expanded="false">⋮</button>
+          <div class="lopts hidden">
+            <label class="olbl" for="postes-taille">Taille des symboles</label>
+            <select id="postes-taille"></select>
+            <label class="olbl" for="postes-couleur">Couleur</label>
+            <select id="postes-couleur"></select>
+            <label class="check"><input type="checkbox" id="postes-labels"> Étiquettes des postes</label>
+            <label class="olbl">Opacité <input type="range" class="opac-range" min="0.1" max="1" step="0.05" value="1"></label>
+          </div>
+        </div>
+
+        <div class="layer" data-id="aire_administrative">
+          <span class="lico" style="--c:#8b5cf6">◧</span>
+          <label class="lname" for="chk-aire_administrative">Aire administrative</label>
+          <label class="switch"><input type="checkbox" id="chk-aire_administrative"><span class="slider"></span></label>
+          <button class="kebab" type="button" aria-label="Options de la couche Aire administrative" aria-expanded="false">⋮</button>
+          <div class="lopts hidden"><label class="olbl">Opacité <input type="range" class="opac-range" min="0.1" max="1" step="0.05" value="1"></label></div>
+        </div>
+
+        <div class="layer" data-id="aire_reelle">
+          <span class="lico" style="--c:#f59e0b">◉</span>
+          <label class="lname" for="chk-aire_reelle">Aire réelle (flux ≥ 5 %)</label>
+          <label class="switch"><input type="checkbox" id="chk-aire_reelle"><span class="slider"></span></label>
+          <button class="kebab" type="button" aria-label="Options de la couche Aire réelle" aria-expanded="false">⋮</button>
+          <div class="lopts hidden"><label class="olbl">Opacité <input type="range" class="opac-range" min="0.1" max="1" step="0.05" value="1"></label></div>
+        </div>
+
+        <div class="layer" data-id="aire_theorique">
+          <span class="lico" style="--c:#0ea5e9">◍</span>
+          <label class="lname" for="chk-aire_theorique">Aire théorique (par quartier)</label>
+          <label class="switch"><input type="checkbox" id="chk-aire_theorique"><span class="slider"></span></label>
+          <button class="kebab" type="button" aria-label="Options de la couche Aire théorique" aria-expanded="false">⋮</button>
+          <div class="lopts hidden"><label class="olbl">Opacité <input type="range" class="opac-range" min="0.1" max="1" step="0.05" value="1"></label></div>
+        </div>
+
+        <div class="layer" data-id="thiessen">
+          <span class="lico" style="--c:#ef4444">⬡</span>
+          <label class="lname" for="chk-thiessen">Thiessen (calculé PostGIS)</label>
+          <label class="switch"><input type="checkbox" id="chk-thiessen"><span class="slider"></span></label>
+          <button class="kebab" type="button" aria-label="Options de la couche Thiessen" aria-expanded="false">⋮</button>
+          <div class="lopts hidden"><label class="olbl">Opacité <input type="range" class="opac-range" min="0.1" max="1" step="0.05" value="1"></label></div>
+        </div>
+
+        <div class="layer" data-id="flux">
+          <span class="lico" style="--c:#d946ef">⇢</span>
+          <label class="lname" for="chk-flux">Flux de patients</label>
+          <label class="switch"><input type="checkbox" id="chk-flux"><span class="slider"></span></label>
+          <button class="kebab" type="button" aria-label="Options de la couche Flux" aria-expanded="false">⋮</button>
+          <div class="lopts hidden"><label class="olbl">Opacité <input type="range" class="opac-range" min="0.1" max="1" step="0.05" value="1"></label></div>
+        </div>
+
+        <div class="layer" data-id="tampon">
+          <span class="lico" style="--c:#38bdf8">◎</span>
+          <label class="lname" for="chk-tampon">Zone tampon</label>
+          <label class="switch"><input type="checkbox" id="chk-tampon"><span class="slider"></span></label>
+          <button class="kebab" type="button" aria-label="Options de la couche Zone tampon" aria-expanded="false">⋮</button>
+          <div class="lopts hidden"><label class="olbl">Opacité <input type="range" class="opac-range" min="0.1" max="1" step="0.05" value="1"></label></div>
+        </div>
+      </div>
+    </section>
+
+    <section class="gcard">
+      <header class="gcard-h"><span class="gico">⛛</span><h2>Filtres</h2></header>
+      <label class="flbl" for="filtre-commune">Commune</label>
+      <select id="filtre-commune"><option value="">Toutes les communes</option></select>
+      <label class="flbl" for="flt-poste">Poste de santé (destination)</label>
+      <select id="flt-poste"><option value="">Tous les postes</option></select>
+      <label class="flbl" for="flt-quartier">Quartier de résidence (origine)</label>
+      <select id="flt-quartier"><option value="">Tous les quartiers</option></select>
+      <button class="btn-apply" id="btn-appliquer" type="button">⛛ Appliquer les filtres</button>
+      <button class="link-reset" id="btn-reset" type="button">Réinitialiser</button>
+      <div id="flt-result" class="flt-result" role="status" aria-live="polite"></div>
+    </section>
+
+    <div class="skyline" aria-hidden="true">
+      <svg viewBox="0 0 300 70" xmlns="http://www.w3.org/2000/svg" focusable="false">
+        <g fill="none" stroke="#3fb6c9" stroke-width="1.2" stroke-linejoin="round" opacity=".75">
+          <path d="M0 66H300"/>
+          <path d="M8 66V50h14V40h12v10h10V66M52 66V46l10-8 10 8V66M80 66V52h18V66"/>
+          <path d="M112 66V34l7-9 7 9V66M119 25V10M116 14h6"/>
+          <path d="M140 66V48h22V66M146 48v-8h10v8"/>
+          <path d="M172 66V56h20V66M176 56v-8h12v8"/>
+          <path d="M204 66V40h8l3-8 3 8h8V66M215 32V18"/>
+          <path d="M238 66V44h16V66M262 66V50h14V36h10V66"/>
+          <path d="M222 66c0-8 8-10 8-10"/>
+        </g>
+      </svg>
+      <div class="sky-cap"><span class="heart">♡</span> Thiès, une ville en santé</div>
+    </div>
+  </aside>
+
+  <!-- =================== COLONNE CENTRALE : carte + indicateurs =================== -->
+  <section class="ccol">
+    <div class="mapcard">
+      <div id="map"></div>
+
+      <div class="seg" role="group" aria-label="Fond de carte">
+        <button class="seg-b" type="button" data-fond="Plan sombre (Esri)">🌙 Plan</button>
+        <button class="seg-b" type="button" data-fond="Satellite (Esri)">🛰️ Satellite</button>
+        <button class="seg-b" type="button" data-fond="Plan clair (Esri)">☀️ Clair</button>
+        <button class="seg-b" type="button" data-fond="OpenStreetMap" title="OpenStreetMap">🗺️ <span class="lg">OpenStreetMap</span><span class="sh">OSM</span></button>
+        <button class="seg-b" type="button" data-fond="Topographique" title="Topographique (OpenTopoMap)">⛰️ <span class="lg">Topographique</span><span class="sh">Topo</span></button>
+      </div>
+
+      <div class="mctl">
+        <button class="mc" id="tb-home" type="button" title="Revenir à l'emprise de la ville" aria-label="Emprise de la ville">▲</button>
+        <button class="mc" id="tb-zoomin" type="button" title="Zoom avant" aria-label="Zoom avant">＋</button>
+        <button class="mc" id="tb-zoomout" type="button" title="Zoom arrière" aria-label="Zoom arrière">－</button>
+        <button class="mc" id="tb-locate" type="button" title="Me localiser" aria-label="Me localiser">⌖</button>
+        <button class="mc" id="tb-full" type="button" title="Plein écran" aria-label="Plein écran">⛶</button>
+        <button class="mc only-small" id="tb-aperu" type="button" title="Aperçu et indicateurs" aria-label="Aperçu">▥</button>
+      </div>
+
+      <div class="map-legend" id="map-legend">
+        <div class="ml-h"><b>Légende</b><button type="button" id="legend-close" aria-label="Masquer la légende">✕</button></div>
+        <div id="legend-box" class="legend flat"></div>
+      </div>
+
+      <div class="mini">
+        <button class="mn" id="mt-iti" type="button">🧭 <span>Itinéraire</span></button>
+        <button class="mn" id="tb-mesure" type="button">📏 <span>Mesures</span> <b id="tb-mesure-val"></b></button>
+        <button class="mn" id="mt-analyse" type="button">🧭 <span>Analyse</span></button>
+        <button class="mn" id="mt-legende" type="button">☰ <span>Légende</span></button>
+        <button class="mn" id="tb-print" type="button">🖨️ <span>Imprimer</span></button>
+        <button class="mn" id="mt-download" type="button" aria-expanded="false">⬇️ <span>Télécharger</span></button>
+        <div class="popdl hidden" id="pop-download">
+          <a href="{% url 'donnees' %}">💾 Tous les jeux de données…</a>
+          <a href="{% url 'export' 'postes' 'csv' %}">Postes de santé · CSV</a>
+          <a href="{% url 'export' 'postes' 'geojson' %}">Postes de santé · GeoJSON</a>
+          <a href="{% url 'export' 'quartiers' 'csv' %}">Quartiers · CSV</a>
+          <a href="{% url 'export' 'quartiers' 'geojson' %}">Quartiers · GeoJSON</a>
+        </div>
+      </div>
+
+      <div class="infostrip" id="infostrip">
+        <div class="is-item is-place"><span class="is-ico">⌖</span><div><b>Thiès</b><small>Région de Thiès</small></div></div>
+        <div class="is-item"><span class="is-ico">◎</span><div><b id="is-communes">—</b><small>communes</small></div></div>
+        <div class="is-item"><span class="is-ico">✚</span><div><b id="is-postes">—</b><small>postes de santé</small></div></div>
+        <div class="is-item"><span class="is-ico">☺</span><div><b id="is-pop">—</b><small>habitants</small></div></div>
+      </div>
+
+      <!-- tiroir « Analyse » -->
+      <div id="drawer-analyse" class="drawer hidden" role="dialog" aria-label="Outils d'analyse">
+        <header class="dr-h"><h3>🧭 Outils d'analyse</h3><button type="button" id="drawer-close" aria-label="Fermer">✕</button></header>
+        <div class="dr-body">
+          <div class="tcard tcard-proche" id="tool-proche-card">
+            <div class="tlbl">📍 Localiser le poste le plus proche</div>
+            <p class="thint">Distance réelle <b>par les rues</b> (réseau OpenStreetMap), pas à vol d'oiseau : le trajet s'affiche sur la carte.</p>
+            <div class="seg-mode" id="proche-modes" role="group" aria-label="Moyen de déplacement">
+              <button class="seg-m on" type="button" data-mode="foot" aria-pressed="true">🚶 À pied</button>
+              <button class="seg-m" type="button" data-mode="car" aria-pressed="false">🚗 Voiture</button>
+              <button class="seg-m" type="button" data-mode="bike" aria-pressed="false">🚲 Vélo</button>
+            </div>
+            <div class="trow">
+              <button class="tbtn" id="proche-gps" type="button">📍 Ma position</button>
+              <button class="tbtn ghost" id="tool-proche" type="button">👆 Cliquer sur la carte</button>
+            </div>
+            <div id="out-proche" class="out" aria-live="polite"></div>
+          </div>
+          <div class="tcard tcard-iti" id="tool-iti-card">
+            <div class="tlbl">🧭 Itinéraire jusqu'à un poste de santé</div>
+            <p class="thint">Trajet par les rues (réseau OpenStreetMap), avec les consignes pas à pas.</p>
+            <label class="thint" for="iti-poste">Destination</label>
+            <select id="iti-poste"><option value="">Le poste le plus proche (par la route)</option></select>
+            <div class="seg-mode" id="iti-modes" role="group" aria-label="Moyen de déplacement">
+              <button class="seg-m on" type="button" data-mode="foot" aria-pressed="true">🚶 À pied</button>
+              <button class="seg-m" type="button" data-mode="car" aria-pressed="false">🚗 Voiture</button>
+              <button class="seg-m" type="button" data-mode="bike" aria-pressed="false">🚲 Vélo</button>
+            </div>
+            <label class="thint">Départ</label>
+            <div class="trow">
+              <button class="tbtn" id="iti-gps" type="button">📍 Ma position</button>
+              <button class="tbtn ghost" id="iti-carte" type="button">👆 Choisir sur la carte</button>
+            </div>
+            <div id="out-iti" class="out" aria-live="polite"></div>
+            <button class="tbtn ghost block" id="iti-clear" type="button">Effacer l'itinéraire</button>
+          </div>
+          <div class="tcard">
+            <div class="tlbl">📏 Mesure de distance</div>
+            <p class="thint">Cliquez pour ajouter des points, double-clic pour terminer.</p>
+            <div class="trow">
+              <button class="tbtn" id="tool-mesure" type="button">Mesurer</button>
+              <button class="tbtn ghost" id="mesure-clear" type="button">Effacer</button>
+            </div>
+            <div id="out-mesure" class="out"></div>
+          </div>
+          <div class="tcard">
+            <div class="tlbl">⭕ Zone tampon & population couverte</div>
+            <label class="thint" for="tampon-poste">Poste</label>
+            <select id="tampon-poste"><option value="">Tous les postes (union)</option></select>
+            <label class="thint" for="tampon-dist">Rayon : <b id="tampon-val">1000 m</b></label>
+            <input type="range" id="tampon-dist" min="250" max="5000" step="250" value="1000">
+            <div class="trow">
+              <button class="tbtn" id="tampon-go" type="button">Calculer</button>
+              <button class="tbtn ghost" id="tampon-clear" type="button">Effacer</button>
+            </div>
+            <div id="out-tampon" class="out"></div>
+            <button class="tbtn ghost block" id="btn-couverture" type="button">Courbe de couverture</button>
+            <canvas id="ch-couverture" height="170" class="hidden"></canvas>
+          </div>
+          <div class="tcard">
+            <div class="tlbl">🚧 Quartiers éloignés d'un poste</div>
+            <label class="thint" for="seuil-dist">Distance au poste le plus proche &gt; <b id="seuil-val">600 m</b></label>
+            <input type="range" id="seuil-dist" min="200" max="2000" step="100" value="600">
+            <div id="out-eloignes" class="out"></div>
+          </div>
+        </div>
+      </div>
+
+      <div id="loader" class="loader">Chargement des données…</div>
+      <div id="toast" class="toast hidden" role="status" aria-live="polite"></div>
+    </div>
+
+    <div class="kpirow" id="kpirow">
+      <div class="kcard"><span class="kico" style="--c:#14b8a6">✚</span><div><b id="kb-postes">—</b><span>Postes de santé</span><em id="kb-postes-sub"></em></div></div>
+      <div class="kcard"><span class="kico" style="--c:#8b5cf6">◎</span><div><b id="kb-communes">—</b><span>Communes</span><em id="kb-communes-sub"></em></div></div>
+      <div class="kcard"><span class="kico" style="--c:#3b82f6">▦</span><div><b id="kb-quartiers">—</b><span>Quartiers</span><em id="kb-quartiers-sub"></em></div></div>
+      <div class="kcard"><span class="kico" style="--c:#6366f1">☺</span><div><b id="kb-pop">—</b><span>Population 2023</span><em>Recensement 2023</em></div></div>
+    </div>
+  </section>
+
+  <!-- =================== COLONNE DROITE : apercu / fiche =================== -->
+  <aside class="rcol" id="rcol">
+    <div id="apercu">
+      <section class="gcard">
+        <header class="gcard-h"><span class="gico">▥</span><h2>Aperçu général</h2><span class="chip-year">Recensement 2023</span></header>
+        <div class="tiles">
+          <div class="tile t-teal"><span class="tico">⌂</span><div><b id="t-postes">—</b><span>Postes de santé</span></div></div>
+          <div class="tile t-violet"><span class="tico">◎</span><div><b id="t-communes">—</b><span>Communes</span></div></div>
+          <div class="tile t-blue"><span class="tico">▦</span><div><b id="t-quartiers">—</b><span>Quartiers</span></div></div>
+          <div class="tile t-amber"><span class="tico">☺</span><div><b id="t-pop">—</b><span>Population</span></div></div>
+        </div>
+      </section>
+
+      <section class="gcard">
+        <header class="gcard-h"><span class="gico">◉</span><h2>Répartition des postes par commune</h2><a class="seeall" href="{% url 'dashboard' %}">Voir tout →</a></header>
+        <div class="donutrow">
+          <div class="donutbox"><canvas id="c-communes" width="150" height="150"></canvas><div class="donut-c"><b id="dc-postes">—</b><span>postes</span></div></div>
+          <ul class="legrows" id="list-communes"></ul>
+        </div>
+      </section>
+
+      <section class="gcard">
+        <header class="gcard-h"><span class="gico">☥</span><h2>Personnel de santé par poste <small>(moyenne)</small></h2><a class="seeall" href="{% url 'dashboard' %}">Voir tout →</a></header>
+        <div class="vbars" id="bars-personnel"></div>
+      </section>
+
+      <section class="gcard">
+        <header class="gcard-h"><span class="gico">✚</span><h2>Services disponibles <small>(sur 11)</small></h2></header>
+        <div class="donutrow">
+          <div class="donutbox"><canvas id="c-services" width="130" height="130"></canvas><div class="donut-c"><b id="ds-pct">—</b><span id="ds-lbl">postes avec ≥ 4 services</span></div></div>
+          <ul class="hbars" id="list-services"></ul>
+        </div>
+      </section>
+
+      <section class="gcard">
+        <header class="gcard-h"><span class="gico">⚕</span><h2>Équipements sanitaires</h2><a class="seeall" href="{% url 'dashboard' %}">Voir tout →</a></header>
+        <div class="eqtiles" id="equip-tiles"></div>
+      </section>
+    </div>
+
+    <div id="detail" class="hidden">
+      <button id="detail-close" class="back" type="button">← Retour à l'aperçu</button>
+      <div id="detail-body"></div>
+    </div>
+  </aside>
+</div>
+
+{% endblock %}
+
+{% block scripts %}
+<script>window.GP_ROUTAGE = "{{ ROUTAGE_URL|escapejs }}";</script>
+<script src="{% static 'portail/js/carte.js' %}"></script>
+{% endblock %}

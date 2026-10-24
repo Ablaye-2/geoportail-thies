@@ -1,0 +1,127 @@
+{% extends "portail/base.html" %}
+{% load static %}
+{% block title %}Géoportail santé · Thiès — Accueil{% endblock %}
+
+{% block footer %}{% endblock %}
+
+{% block content %}
+<main class="home">
+
+  <!-- ===================== HERO ===================== -->
+  <section class="hero">
+    <div class="hero-bg hero-photo" aria-hidden="true" style="--hero-photo: url('{% static 'portail/img/accueil_poste_sante.jpg' %}')">
+      <svg viewBox="0 0 1600 900" preserveAspectRatio="xMidYMid slice" xmlns="http://www.w3.org/2000/svg" focusable="false">
+        <defs>
+          <radialGradient id="glow" cx="72%" cy="38%" r="62%">
+            <stop offset="0" stop-color="#5eead4" stop-opacity=".42"/><stop offset="1" stop-color="#0f766e" stop-opacity="0"/>
+          </radialGradient>
+          <pattern id="plus" width="96" height="96" patternUnits="userSpaceOnUse">
+            <path d="M48 36v24M36 48h24" stroke="#fff" stroke-width="5" stroke-linecap="round" opacity=".075"/>
+          </pattern>
+          <g id="pin">
+            <path d="M0 0C-14-20-24-32-24-46a24 24 0 1 1 48 0C24-32 14-20 0 0Z" fill="#ef4444" stroke="#fff" stroke-width="4"/>
+            <path d="M0-58v24M-12-46h24" stroke="#fff" stroke-width="7" stroke-linecap="round"/>
+          </g>
+        </defs>
+        <rect width="1600" height="900" fill="url(#glow)"/>
+        <rect width="1600" height="900" fill="url(#plus)"/>
+
+        <!-- plan stylisé de la ville : quartiers -->
+        <g class="city" transform="translate(860 110)">
+          <polygon points="40,120 190,70 300,130 270,250 120,270 30,210"/>
+          <polygon points="190,70 330,20 450,70 420,170 300,130"/>
+          <polygon points="300,130 420,170 480,260 380,330 270,250"/>
+          <polygon points="120,270 270,250 380,330 330,450 160,430 90,350"/>
+          <polygon points="450,70 580,110 600,230 480,260 420,170"/>
+          <polygon points="480,260 600,230 660,340 560,430 380,330"/>
+          <polygon points="330,450 380,330 560,430 520,540 370,560"/>
+          <polygon points="160,430 330,450 370,560 240,610 120,540"/>
+        </g>
+
+        <!-- battement de coeur -->
+        <path class="ecg-base" d="M0 700H430L480 700L512 622L556 780L602 540L652 752L684 700H1040L1080 700L1106 650L1138 742L1164 700H1600"/>
+        <path class="ecg" pathLength="1000" d="M0 700H430L480 700L512 622L556 780L602 540L652 752L684 700H1040L1080 700L1106 650L1138 742L1164 700H1600"/>
+
+        <!-- postes de santé -->
+        <use class="pin p1" href="#pin" x="1040" y="360"/>
+        <use class="pin p2" href="#pin" x="1210" y="300"/>
+        <use class="pin p3" href="#pin" x="1330" y="470"/>
+        <use class="pin p4" href="#pin" x="1130" y="520"/>
+        <use class="pin p5" href="#pin" x="1420" y="330"/>
+        <!-- grande croix -->
+        <path d="M200 520v220M90 630h220" stroke="#fff" stroke-width="46" stroke-linecap="round" opacity=".06"/>
+      </svg>
+    </div>
+
+    <div class="hero-inner">
+      <span class="eyebrow">Ville de Thiès · Sénégal</span>
+      <h1>Géoportail de la <em>maille sanitaire</em></h1>
+      <p class="hero-lead">Visualisez où se trouvent les postes de santé, qui ils desservent réellement et où l'accès aux soins reste difficile.
+        Un outil pour décider, planifier et orienter les habitants.</p>
+      <div class="hero-cta">
+        <a class="cta primary" href="{% url 'geoportail' %}">🗺️ Ouvrir le géoportail</a>
+      </div>
+    </div>
+
+    <div class="hero-stats">
+      <div class="hstat"><b data-count="{{ stats.population|default:0 }}">{{ stats.population }}</b><span>habitants (recensement 2023)</span></div>
+      <div class="hstat"><b data-count="{{ stats.postes|default:0 }}">{{ stats.postes }}</b><span>postes de santé</span></div>
+      <div class="hstat"><b data-count="{{ stats.quartiers|default:0 }}">{{ stats.quartiers }}</b><span>quartiers analysés</span></div>
+      <div class="hstat"><b data-count="{{ stats.patients|default:0 }}">{{ stats.patients }}</b><span>patients enquêtés</span></div>
+      {% if stats.couverture %}
+      <div class="hstat"><b data-count="{{ stats.couverture|stringformat:'.1f' }}" data-dec="1" data-suffix=" %">{{ stats.couverture }} %</b><span>de la population à moins d'1 km d'un poste</span></div>
+      {% endif %}
+    </div>
+  </section>
+
+  <!-- ===================== FONCTIONNALITES ===================== -->
+  <section class="section">
+    <h2>Que pouvez-vous faire ici ?</h2>
+    <p class="section-lead">Un outil cartographique, pour les habitants comme pour les professionnels de santé et les décideurs.</p>
+    <div class="cards">
+      <a class="fcard" href="{% url 'geoportail' %}">
+        <span class="ico">🗺️</span><h3>Géoportail</h3>
+        <p>Postes de santé, quartiers, aires de desserte et flux de patients. Fiches détaillées, analyses spatiales et itinéraire par les rues jusqu'à un poste.</p>
+        <span class="more">Explorer →</span>
+      </a>
+    </div>
+  </section>
+
+  <!-- ===================== MAILLE SANITAIRE ===================== -->
+  <section class="section alt">
+    <h2>Comprendre la maille sanitaire</h2>
+    <p class="section-lead">Chaque poste de santé dessert un territoire. Ce géoportail compare trois façons de le définir.</p>
+    <div class="aires">
+      <div class="aire"><span class="dot" style="background:#8b5cf6"></span><h3>Aire administrative</h3>
+        <p>Les quartiers officiellement rattachés à chaque poste par le découpage sanitaire.</p></div>
+      <div class="aire"><span class="dot" style="background:#f59e0b"></span><h3>Aire réelle</h3>
+        <p>Les quartiers d'où viennent réellement les patients, d'après l'enquête (au moins 5 % du flux d'un poste).</p></div>
+      <div class="aire"><span class="dot" style="background:#10b981"></span><h3>Aire théorique</h3>
+        <p>La zone la plus proche de chaque poste (polygones de Thiessen), indépendamment du découpage officiel.</p></div>
+    </div>
+    <p class="section-lead small">Leur comparaison révèle les quartiers mal desservis, les postes saturés et les écarts entre le découpage officiel et les habitudes des habitants.</p>
+  </section>
+
+  <!-- ===================== SOURCES / PIED ===================== -->
+  <section class="section">
+    <h2>Les données</h2>
+    <ul class="sources">
+      <li><b>Population :</b> recensement 2023, par quartier</li>
+      <li><b>Postes de santé :</b> personnel, services, équipements et position GPS</li>
+      <li><b>Enquête :</b> {{ stats.patients }} patients interrogés dans {{ stats.postes }} postes</li>
+      <li><b>Normes :</b> recommandations de l'OMS (1 médecin pour 10 000 habitants, 1 infirmier pour 5 000)</li>
+    </ul>
+  </section>
+
+  <footer class="home-foot">
+    <div class="foot-inner">
+      <span>✚ Géoportail santé · Thiès</span>
+      <span><a href="{% url 'geoportail' %}">Géoportail</a> · <a href="{% url 'cartotheque' %}">Cartothèque</a> · <a href="{% url 'statistiques' %}">Statistiques</a> · <a href="{% url 'dashboard' %}">Tableau de bord</a> · <a href="{% url 'admin:index' %}">Administration</a></span>
+    </div>
+  </footer>
+</main>
+{% endblock %}
+
+{% block scripts %}
+<script src="{% static 'portail/js/accueil.js' %}"></script>
+{% endblock %}

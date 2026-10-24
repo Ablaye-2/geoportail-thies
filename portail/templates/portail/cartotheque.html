@@ -1,0 +1,86 @@
+{% extends "portail/base.html" %}
+{% load static %}
+{% block title %}Cartothèque · Géoportail santé Thiès{% endblock %}
+
+{% block content %}
+<main class="ctq">
+  <header class="ctq-head">
+    <div>
+      <span class="eyebrow">Cartothèque</span>
+      <h1>Les cartes de la maille sanitaire de Thiès</h1>
+      <p class="ctq-lead">Les cartes du mémoire (traitements QGIS et R, 2026) à consulter en grand, télécharger ou ouvrir dans le géoportail avec les couches correspondantes.</p>
+    </div>
+    <div class="ctq-tools">
+      <div class="ctq-filtres" role="group" aria-label="Filtrer par thème">
+        <button class="ctq-f on" type="button" data-theme="">Toutes <b>{{ cartes|length }}</b></button>
+        {% for code, lib in themes %}<button class="ctq-f" type="button" data-theme="{{ code }}">{{ lib }}</button>{% endfor %}
+      </div>
+      <input id="ctq-search" type="search" placeholder="Rechercher une carte…" aria-label="Rechercher une carte">
+    </div>
+  </header>
+
+  <section class="ctq-grid" id="ctq-grid">
+    {% for c in cartes %}
+    <article class="ctq-card" data-theme="{{ c.theme }}" data-i="{{ forloop.counter0 }}"
+             data-titre="{{ c.titre }}" data-texte="{{ c.texte }}" data-source="{{ c.source }}" data-figure="{{ c.figure }}"
+             data-img="{% static 'portail/img/cartotheque/' %}{{ c.id }}.png" data-geo="{% url 'geoportail' %}{% if c.geoportail %}?{{ c.geoportail }}{% endif %}">
+      <button class="ctq-thumb" type="button" aria-label="Agrandir : {{ c.titre }}">
+        <img src="{% static 'portail/img/cartotheque/' %}{{ c.id }}_mini.jpg" alt="{{ c.titre }}" loading="lazy">
+        <span class="ctq-fig">Figure {{ c.figure }}</span>
+      </button>
+      <div class="ctq-body">
+        <span class="ctq-theme">{% for code, lib in themes %}{% if code == c.theme %}{{ lib }}{% endif %}{% endfor %}</span>
+        <h2>{{ c.titre }}</h2>
+        <p>{{ c.texte }}</p>
+        <small>Source : {{ c.source }}</small>
+      </div>
+      <div class="ctq-acts">
+        <button class="ctq-btn" type="button" data-act="voir">🔍 Agrandir</button>
+        <a class="ctq-btn" href="{% static 'portail/img/cartotheque/' %}{{ c.id }}.png" download="Thies_figure{{ c.figure }}_{{ c.id }}.png">⬇ PNG</a>
+        <a class="ctq-btn main" href="{% url 'geoportail' %}{% if c.geoportail %}?{{ c.geoportail }}{% endif %}">🗺️ Géoportail</a>
+      </div>
+    </article>
+    {% endfor %}
+  </section>
+  <p class="ctq-vide hidden" id="ctq-vide">Aucune carte ne correspond à votre recherche.</p>
+
+  <section class="ctq-inter">
+    <h2>Cartes interactives</h2>
+    <p class="ctq-lead">Produites à la demande dans le géoportail à partir de la base de données.</p>
+    <div class="ctq-igrid">
+      {% for c in interactives %}
+      <a class="ctq-icard" href="{% url 'geoportail' %}?{{ c.geoportail }}">
+        <span class="ico">{{ c.ico }}</span>
+        <div><h3>{{ c.titre }}</h3><p>{{ c.texte }}</p></div>
+        <span class="go">→</span>
+      </a>
+      {% endfor %}
+    </div>
+  </section>
+</main>
+
+<div class="lightbox hidden" id="lightbox" role="dialog" aria-modal="true" aria-label="Carte agrandie">
+  <div class="lb-card">
+    <header class="lb-h">
+      <div><span class="ctq-fig" id="lb-fig"></span><h3 id="lb-titre"></h3></div>
+      <button type="button" class="lb-x" id="lb-close" aria-label="Fermer">✕</button>
+    </header>
+    <div class="lb-img">
+      <button type="button" class="lb-nav prev" id="lb-prev" aria-label="Carte précédente">‹</button>
+      <img id="lb-img" alt="">
+      <button type="button" class="lb-nav next" id="lb-next" aria-label="Carte suivante">›</button>
+    </div>
+    <footer class="lb-f">
+      <p><span id="lb-texte"></span><br><small id="lb-source"></small></p>
+      <div class="ctq-acts">
+        <a class="ctq-btn" id="lb-dl" download>⬇ Télécharger</a>
+        <a class="ctq-btn main" id="lb-geo">🗺️ Ouvrir dans le géoportail</a>
+      </div>
+    </footer>
+  </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script src="{% static 'portail/js/cartotheque.js' %}"></script>
+{% endblock %}

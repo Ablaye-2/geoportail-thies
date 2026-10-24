@@ -1,0 +1,187 @@
+{% extends "portail/base.html" %}
+{% load static %}
+{% block title %}Statistiques · Géoportail santé Thiès{% endblock %}
+
+{% block content %}
+<main class="stx">
+  <header class="stx-head">
+    <span class="eyebrow">Statistiques</span>
+    <h1>La maille sanitaire de Thiès en chiffres</h1>
+    <p class="ctq-lead">Les analyses spatiales du mémoire, recalculées à partir de la base de données : couverture démographique, accessibilité,
+      concordance des trois aires de desserte et typologie des postes. Le suivi du personnel et de l'enquête patients est dans le <a href="{% url 'dashboard' %}">tableau de bord</a>.</p>
+    <nav class="stx-nav" aria-label="Sections">
+      <a href="#methode">Normes et méthode</a><a href="#couverture">Couverture</a><a href="#accessibilite">Accessibilité</a>
+      <a href="#aires">Aires de desserte</a><a href="#typologie">Typologie</a><a href="#zones">Zones critiques</a>
+      <a href="#recommandations">Recommandations</a><a href="#hypotheses">Hypothèses</a><a href="#postes">Par poste</a><a href="#analyses">Analyses multivariées</a><a href="#fiabilite">Sources et fiabilité</a>
+    </nav>
+  </header>
+
+  <section class="kpis" id="stx-kpis"><div class="loading">Chargement…</div></section>
+
+  <section class="stx-sec" id="methode">
+    <h2><span>1</span> Normes et méthode</h2>
+    <div class="grid">
+      <article class="card-table"><h3>Normes et repères retenus <small>(tableau 1)</small></h3>
+        <div class="scroll"><table class="stat-ref"><thead><tr><th>Indicateur</th><th>Valeur de référence</th><th>Source</th></tr></thead><tbody>
+          {% for a, b, c in normes_memoire %}<tr><td>{{ a }}</td><td><b>{{ b }}</b></td><td>{{ c }}</td></tr>{% endfor %}
+        </tbody></table></div>
+        <p class="hint">La norme de 7 714 habitants par poste sert de référence principale, le seuil de 5 km de simple repère.</p></article>
+      <article class="card-table"><h3>Les trois aires de desserte comparées <small>(tableau 3)</small></h3>
+        <div class="scroll"><table class="stat-ref"><thead><tr><th>Aire</th><th>Principe de construction</th><th>Données</th><th>Polygones</th></tr></thead><tbody>
+          {% for a, b, c, d in aires_memoire %}<tr><td><b>{{ a }}</b></td><td>{{ b }}</td><td>{{ c }}</td><td>{{ d }}</td></tr>{% endfor %}
+        </tbody></table></div>
+        <p class="hint">Indices : forme IF = S / D², décentrement ID = d / √(S/π), discordance IDis = S(A Δ B) / S(A ∪ B).</p></article>
+    </div>
+  </section>
+
+  <section class="stx-sec" id="couverture">
+    <h2><span>2</span> Couverture démographique</h2>
+    <div class="grid">
+      <article class="card-table wide"><div class="th-row"><h3>Couverture théorique par commune <small>(tableau 7)</small></h3><button class="csv" data-t="t-couv">⬇ CSV</button></div>
+        <div class="scroll"><table id="t-couv"></table></div><p class="hint">Norme : 1 poste pour 7 714 habitants (carte sanitaire, mise à jour 2011). Population RGPH-5, 2023.</p></article>
+      <article class="card-chart wide"><h3>Taux de couverture théorique par poste <small>(population de l'aire / 7 714 ; 1 = norme)</small></h3><canvas id="c-taux"></canvas></article>
+      <article class="card-table wide"><h3>Typologie des mailles <small>(tableau 15)</small></h3><div id="l-mailles" class="mailles"></div></article>
+      <article class="card-chart"><h3>Habitants par poste : Thiès face aux normes <small>(section 4.2.2)</small></h3><canvas id="c-comp-hab"></canvas></article>
+      <article class="card-table"><div class="th-row"><h3>Postes nécessaires pour atteindre la norme <small>(section 4.3.1)</small></h3><button class="csv" data-t="t-besoins">⬇ CSV</button></div>
+        <div class="scroll"><table id="t-besoins"></table></div>
+        <p class="hint">Ordres de grandeur : ne tiennent compte ni des centres de santé, ni du secteur privé, ni de la répartition de la population dans la commune.</p></article>
+    </div>
+  </section>
+
+  <section class="stx-sec" id="accessibilite">
+    <h2><span>3</span> Accessibilité</h2>
+    <div class="grid">
+      <article class="card-table"><div class="th-row"><h3>Superficie à proximité d'un poste <small>(tableau 8)</small></h3><button class="csv" data-t="t-grille">⬇ CSV</button></div>
+        <div class="scroll"><table id="t-grille"></table></div><p class="hint">Distance à vol d'oiseau, grille de 50 m, pondérée par la superficie.</p></article>
+      <article class="card-chart"><h3>Part cumulée de la superficie selon la distance</h3><canvas id="c-grille"></canvas></article>
+      <article class="card-table"><h3>Distance au poste le plus proche <small>(section 4.1.4)</small></h3><div id="l-dist" class="stat-tiles"></div>
+        <p class="hint">Distance à vol d'oiseau depuis chaque point d'une grille de 100 m. Le seuil de 5 km couvre presque toute la ville et ne distingue donc presque rien.</p></article>
+      <article class="card-chart"><h3>Distance moyenne au poste le plus proche <small>(km)</small></h3><canvas id="c-comp-dist"></canvas></article>
+      <article class="card-chart wide"><h3>Population à moins d'une distance donnée d'un poste <small>(zones tampons, population des quartiers au prorata de la surface)</small></h3><canvas id="c-popdist"></canvas></article>
+    </div>
+  </section>
+
+  <section class="stx-sec" id="aires">
+    <h2><span>4</span> Aires de desserte</h2>
+    <div class="grid">
+      <article class="card-table"><div class="th-row"><h3>Concordance et discordance en superficie <small>(tableau 5)</small></h3><button class="csv" data-t="t-conc">⬇ CSV</button></div>
+        <div class="scroll"><table id="t-conc"></table></div><p class="hint">Parts calculées hors portions sans donnée (aucun poste réel).</p></article>
+      <article class="card-chart"><h3>Concordance entre les trois aires <small>(km²)</small></h3><canvas id="c-conc"></canvas></article>
+      <article class="card-table"><div class="th-row"><h3>Indices de forme, de décentrement et de discordance</h3><button class="csv" data-t="t-indices">⬇ CSV</button></div>
+        <div class="scroll"><table id="t-indices"></table></div><p class="hint">IF : cercle = 0,785. Discordance : 0 = aires identiques, 1 = aucun recouvrement.</p></article>
+      <article class="card-chart"><h3>Discordance administrative / réelle par poste</h3><canvas id="c-disc"></canvas></article>
+    </div>
+    <div class="grid stx-more">
+      <article class="card-table"><h3>Taille des polygones de Thiessen <small>(section 4.1.1)</small></h3><div id="l-thiessen" class="stat-tiles"></div></article>
+      <article class="card-table"><h3>Aire réelle et aire administrative</h3><div id="l-reel"></div></article>
+      <article class="card-table wide"><h3>Indices de forme et de décentrement des trois aires <small>(tableau 6 : moyennes, médianes entre parenthèses)</small></h3>
+        <div class="scroll"><table class="stat-ref"><thead><tr><th>Indice</th><th class="num">Aire théorique</th><th class="num">Aire administrative</th><th class="num">Aire réelle</th></tr></thead><tbody>
+          {% for a, b, c, d in indices_memoire %}<tr><td>{{ a }}</td><td class="num">{{ b }}</td><td class="num">{{ c }}</td><td class="num">{{ d }}</td></tr>{% endfor %}
+        </tbody></table></div><p class="hint">Gravelius, Miller et allongement calculés sur les aires administratives corrigées (calculs QGIS, 2026).</p></article>
+    </div>
+  </section>
+
+  <section class="stx-sec" id="typologie">
+    <h2><span>5</span> Typologie de l'offre</h2>
+    <div class="grid">
+      <article class="card-table wide"><div class="th-row"><h3>Classes du K-means et de la classification hiérarchique <small>(tableaux 12 et 13)</small></h3><button class="csv" data-t="t-classes">⬇ CSV</button></div>
+        <div class="scroll"><table id="t-classes"></table></div></article>
+      <article class="card-table"><h3>Croisement K-means × CH <small>(tableau 14, nombre de postes)</small></h3><div class="scroll"><table id="t-croise"></table></div>
+        <p class="hint">Les deux méthodes ne classent différemment que six postes sur 28.</p></article>
+      <article class="card-chart"><h3>Répartition des postes par classe K-means</h3><canvas id="c-classes"></canvas></article>
+    </div>
+    <div class="grid stx-more">
+      <article class="card-table"><h3>ACP : interprétation des trois premiers axes <small>(tableau 10)</small></h3>
+        <div class="scroll"><table class="stat-ref"><thead><tr><th>Axe</th><th>Inertie</th><th>Variables les plus corrélées</th><th>Interprétation</th></tr></thead><tbody>
+          {% for a, b, c, d in axes_acp %}<tr><td><b>{{ a }}</b></td><td>{{ b }}</td><td>{{ c }}</td><td>{{ d }}</td></tr>{% endfor %}
+        </tbody></table></div><p class="hint">Les trois premiers axes restituent 70,8 % de l'inertie.</p></article>
+      <article class="card-table"><h3>ACM : interprétation des trois premiers axes <small>(tableau 11)</small></h3>
+        <div class="scroll"><table class="stat-ref"><thead><tr><th>Axe</th><th>Inertie</th><th>Modalités les plus contributives</th><th>Interprétation</th></tr></thead><tbody>
+          {% for a, b, c, d in axes_acm %}<tr><td><b>{{ a }}</b></td><td>{{ b }}</td><td>{{ c }}</td><td>{{ d }}</td></tr>{% endfor %}
+        </tbody></table></div><p class="hint">Les trois premiers axes restituent 91,5 % de l'inertie.</p></article>
+      <article class="card-table"><div class="th-row"><h3>Profil des classes du K-means <small>(tableau 12, moyennes par poste)</small></h3><button class="csv" data-t="t-profils">⬇ CSV</button></div>
+        <div class="scroll"><table id="t-profils"></table></div></article>
+      <article class="card-table"><h3>Charge démographique et typologie de l'offre <small>(section 4.1.7, nombre de postes)</small></h3>
+        <div class="scroll"><table id="t-maille-k"></table></div>
+        <p class="hint">Les situations critiques ne sont pas là où l'offre est la plus complète : le seul poste de référence dessert une aire à 0,37 fois la norme.</p></article>
+    </div>
+  </section>
+
+  <section class="stx-sec" id="zones">
+    <h2><span>6</span> Zones critiques et sites à équiper</h2>
+    <div class="zones">
+      {% for titre, postes, texte in zones %}<article class="zone"><span class="zone-n">{{ forloop.counter }}</span><div><h3>{{ titre }}</h3><small>{{ postes }}</small><p>{{ texte }}</p></div></article>{% endfor %}
+    </div>
+    <div class="grid stx-more">
+      <article class="card-chart wide"><h3>Sites proposés pour de nouveaux postes <small>(points les plus éloignés d'un poste, section 4.3.1)</small></h3>
+        <div id="stx-map" class="stx-map" aria-label="Carte des sites proposés"></div>
+        <p class="hint">Localisations indicatives, à confronter à l'occupation réelle du sol. À l'est, où le problème est la charge, le mémoire recommande de dédoubler les postes les plus chargés (Fahu, Hersent, Sampathe, Silmang).
+          <a href="{% url 'geoportail' %}?couches=thiessen&amp;couleur=taux&amp;quartiers=0">Ouvrir dans le géoportail →</a></p>
+        <div class="scroll"><table id="t-sites"></table></div></article>
+    </div>
+  </section>
+
+  <section class="stx-sec" id="recommandations">
+    <h2><span>7</span> Recommandations</h2>
+    <article class="card-table"><h3>Synthèse des recommandations <small>(tableau 16)</small></h3>
+      <div class="scroll"><table class="stat-ref"><thead><tr><th>Axe</th><th>Action</th><th>Acteurs</th><th>Horizon</th></tr></thead><tbody>
+        {% for a, b, c, d in recommandations %}<tr><td><b>{{ a }}</b></td><td>{{ b }}</td><td>{{ c }}</td><td><span class="badge {% if d == 'Court terme' %}warn{% else %}ok{% endif %}">{{ d }}</span></td></tr>{% endfor %}
+      </tbody></table></div>
+      <p class="hint">Les aires de responsabilité devraient être redéfinies à partir de l'aire réelle pour les huit postes à forte discordance (Médina Fall 2, Thiès Nonè, Cité Niakh, Grand Standing, Petit Thialy, Mbour 2, Goutte de Lait, Mbour 1).</p></article>
+  </section>
+
+  <section class="stx-sec" id="hypotheses">
+    <h2><span>8</span> Validation des hypothèses</h2>
+    <div class="hypos">
+      {% for code, h, r in hypotheses %}<article class="hypo"><header><span>{{ code }}</span><b>Confirmée</b></header><h3>{{ h }}</h3><p>{{ r }}</p></article>{% endfor %}
+    </div>
+  </section>
+
+  <section class="stx-sec" id="postes">
+    <h2><span>9</span> Indicateurs par poste de santé</h2>
+    <article class="card-table">
+      <div class="th-row"><h3>Tableau 17 <small>(cliquer sur un en-tête pour trier)</small></h3>
+        <div class="th-tools"><input id="t17-filtre" type="search" placeholder="Filtrer…" aria-label="Filtrer les postes"><button class="csv" data-t="t-17">⬇ CSV</button></div></div>
+      <div class="scroll"><table id="t-17"></table></div>
+      <p class="hint">S : superficie de l'aire théorique. T–A, A–R, T–R : discordances théorique/administrative, administrative/réelle, théorique/réelle. « – » : pas d'aire réelle.</p>
+    </article>
+  </section>
+
+  <section class="stx-sec" id="analyses">
+    <h2><span>10</span> Analyses multivariées <small>(traitement R : FactoMineR, factoextra)</small></h2>
+    {% for g in figures %}
+    <h3 class="stx-g">{{ g.groupe }}</h3>
+    <div class="stx-figs">
+      {% for f in g.items %}
+      <figure class="stx-fig" data-img="{% static 'portail/img/cartotheque/' %}{{ f.id }}.png" data-titre="{{ f.titre }}" data-figure="{{ f.figure }}">
+        <button type="button" aria-label="Agrandir : {{ f.titre }}"><img src="{% static 'portail/img/cartotheque/' %}{{ f.id }}_mini.jpg" alt="{{ f.titre }}" loading="lazy"></button>
+        <figcaption><b>Figure {{ f.figure }}</b> · {{ f.titre }}</figcaption>
+      </figure>
+      {% endfor %}
+    </div>
+    {% endfor %}
+  </section>
+  <section class="stx-sec" id="fiabilite">
+    <h2><span>11</span> Sources et fiabilité des chiffres</h2>
+    <div class="fiab-leg"><span class="fb calcule">Recalculé depuis la base</span><span class="fb memoire">Repris du mémoire</span><span class="fb approx">Approximation ou donnée incomplète</span></div>
+    <article class="card-table"><div class="scroll"><table class="stat-ref fiab">
+      <thead><tr><th>Origine</th><th>Résultats</th><th>Explication</th></tr></thead><tbody>
+        {% for o, r, e in fiabilite %}<tr><td><span class="fb {{ o }}">{% if o == 'calcule' %}Base{% elif o == 'memoire' %}Mémoire{% else %}Approximation{% endif %}</span></td><td><b>{{ r }}</b></td><td>{{ e }}</td></tr>{% endfor %}
+      </tbody></table></div></article>
+  </section>
+</main>
+
+<div class="lightbox hidden" id="lightbox" role="dialog" aria-modal="true" aria-label="Figure agrandie">
+  <div class="lb-card">
+    <header class="lb-h"><div><span class="ctq-fig" id="lb-fig"></span><h3 id="lb-titre"></h3></div>
+      <button type="button" class="lb-x" id="lb-close" aria-label="Fermer">✕</button></header>
+    <div class="lb-img"><img id="lb-img" alt=""></div>
+    <footer class="lb-f"><p><small>Source : traitement R, Ba &amp; Ndao, 2026.</small></p>
+      <div class="ctq-acts"><a class="ctq-btn" id="lb-dl" download>⬇ Télécharger</a></div></footer>
+  </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script src="{% static 'portail/js/statistiques.js' %}"></script>
+{% endblock %}

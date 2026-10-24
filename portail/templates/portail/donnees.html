@@ -1,0 +1,91 @@
+{% extends "portail/base.html" %}
+{% load static %}
+{% block title %}Données · Géoportail santé Thiès{% endblock %}
+
+{% block content %}
+<main class="ctq dnx">
+  <header class="ctq-head">
+    <div>
+      <span class="eyebrow">Données</span>
+      <h1>Catalogue des données</h1>
+      <p class="ctq-lead">Toutes les couches du géoportail, à télécharger en <b>GeoJSON</b> (QGIS, ArcGIS) ou en <b>CSV</b> (Excel, avec la géométrie en WKT),
+        à prévisualiser ou à ouvrir directement sur la carte.</p>
+    </div>
+    <div class="ctq-filtres" role="group" aria-label="Filtrer par thème">
+      <button class="ctq-f on" type="button" data-theme="">Tous <b>{{ jeux|length }}</b></button>
+      {% for code, lib in themes %}<button class="ctq-f" type="button" data-theme="{{ code }}">{{ lib }}</button>{% endfor %}
+    </div>
+  </header>
+
+  <section class="dnx-strip">
+    <div><b>{{ jeux|length }}</b><span>jeux de données</span></div>
+    <div><b>GeoJSON · CSV</b><span>formats d'export</span></div>
+    <div><b>EPSG:4326</b><span>WGS 84 (exports)</span></div>
+    <div><b>{% if MAJ.date %}{{ MAJ.date|date:"j F Y" }}{% else %}2026{% endif %}</b><span>dernière collecte</span></div>
+  </section>
+
+  <section class="dnx-grid" id="dnx-grid">
+    {% for j in jeux %}
+    <article class="dnx-card" data-theme="{{ j.theme }}" data-id="{{ j.id }}">
+      <header class="dnx-h">
+        <span class="dnx-ico">{{ j.ico }}</span>
+        <div><h2>{{ j.titre }}</h2>
+          <div class="dnx-tags"><span class="dnx-tag">{{ j.geom }}</span>{% if j.n is not None %}<span class="dnx-tag n">{{ j.n }} élément{{ j.n|pluralize }}</span>{% endif %}</div></div>
+      </header>
+      <p>{{ j.texte }}</p>
+      <div class="dnx-champs" aria-label="Principaux champs">{% for c in j.champs %}<code>{{ c }}</code>{% endfor %}</div>
+      <small class="dnx-src">Source : {{ j.source }}</small>
+      <div class="ctq-acts">
+        <a class="ctq-btn main" href="{% url 'export' j.id 'geojson' %}">⬇ GeoJSON</a>
+        <a class="ctq-btn" href="{% url 'export' j.id 'csv' %}">⬇ CSV</a>
+        <button class="ctq-btn" type="button" data-act="apercu" aria-expanded="false">👁 Aperçu</button>
+        <a class="ctq-btn" href="{% url 'geoportail' %}{% if j.geoportail %}?{{ j.geoportail }}{% endif %}">🗺️ Carte</a>
+      </div>
+      <div class="dnx-apercu hidden"></div>
+    </article>
+    {% endfor %}
+  </section>
+
+  <section class="dnx-sec">
+    <h2>Utiliser les données</h2>
+    <div class="dnx-steps">
+      <div class="dnx-step"><span>QGIS</span><p>Menu <b>Couche › Ajouter une couche › Ajouter une couche vecteur</b>, choisissez le fichier <code>.geojson</code> téléchargé. Ou glissez-déposez-le dans QGIS.</p></div>
+      <div class="dnx-step"><span>Excel</span><p>Ouvrez le <code>.csv</code> : séparateur point-virgule, encodage UTF-8. La colonne <code>geometrie_wkt</code> contient la géométrie (importable dans QGIS comme « texte délimité »).</p></div>
+      <div class="dnx-step"><span>API</span><p>Les mêmes données sont servies en JSON / GeoJSON pour d'autres applications (liste ci-dessous). Ajoutez l'adresse du serveur devant chaque chemin.</p></div>
+    </div>
+  </section>
+
+  <section class="dnx-sec">
+    <h2>API</h2>
+    <div class="card-table"><div class="scroll"><table class="dnx-api">
+      <thead><tr><th>Adresse</th><th>Contenu</th><th></th></tr></thead>
+      <tbody>
+        {% for chemin, lib in api %}
+        <tr><td><a class="mono" href="{% url 'accueil' %}{{ chemin }}" target="_blank" rel="noopener">/{{ chemin }}</a></td><td>{{ lib }}</td>
+          <td class="num"><button class="csv dnx-copy" type="button" data-copie="/{{ chemin }}" title="Copier l'adresse">Copier</button></td></tr>
+        {% endfor %}
+      </tbody>
+    </table></div></div>
+  </section>
+
+  <section class="dnx-sec">
+    <h2>Sources et métadonnées</h2>
+    <dl class="dnx-meta">
+      {% for k, v in meta %}<div><dt>{{ k }}</dt><dd>{{ v }}</dd></div>{% endfor %}
+    </dl>
+  </section>
+
+  <section class="dnx-sec">
+    <h2>Citer ces données</h2>
+    <div class="dnx-cite">
+      <p id="dnx-citation">Ba, N. &amp; Ndao, A. (2026). <i>Analyse de la maille d'action sanitaire dans la ville de Thiès : cas des postes de santé</i>. Projet de fin de cycle (Licence, Géomatique), UFR Sciences de l'ingénieur, Université Iba Der Thiam de Thiès. Géoportail de la maille sanitaire de Thiès, données consultées le <span id="dnx-date"></span>.</p>
+      <button class="ctq-btn" type="button" id="dnx-copier-cite">📋 Copier la citation</button>
+    </div>
+  </section>
+</main>
+<div id="dnx-toast" class="dnx-toast hidden" role="status" aria-live="polite"></div>
+{% endblock %}
+
+{% block scripts %}
+<script src="{% static 'portail/js/donnees.js' %}"></script>
+{% endblock %}
