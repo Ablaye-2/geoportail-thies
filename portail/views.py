@@ -15,7 +15,7 @@ from django.shortcuts import redirect, render
 from django.views.decorators.http import require_GET
 
 from . import catalogue as CAT
-from .catalogue import (API_DOC, CARTES, CARTES_INTERACTIVES, FIGURES_ANALYSE, JEUX_DONNEES, METADONNEES,
+from .catalogue import (API_DOC, CARTES, CARTES_INTERACTIVES, JEUX_DONNEES, METADONNEES,
                         THEMES_CARTES, THEMES_DONNEES)
 from .db import collection, ligne, lignes, reponse
 
@@ -57,7 +57,7 @@ AIRES = {  # type -> (table, libelle)
 SRID_UTM = 32628
 
 # Normes et reperes retenus par le memoire (tableau 1)
-NORME_POSTE = 7714          # habitants par poste de sante urbain (carte sanitaire, mise a jour 2011)
+NORME_POSTE = 10000         # habitants par poste de sante (repere OMS repris par l'ANSD, 2022 ; memoire v3, tableau 1-1)
 NORME_MEDECIN = 10000       # 1 medecin pour 10 000 habitants (OMS, ANSD)
 NORME_INFIRMIER = 5000      # 1 infirmier pour 5 000 habitants (OMS, ANSD)
 NORME_TECHNICIEN = 5000     # hypothese : alignee sur les infirmiers
@@ -137,9 +137,9 @@ def donnees(request):
 
 def statistiques(request):
     return render(request, "portail/statistiques.html", {
-        "page": "statistiques", "figures": FIGURES_ANALYSE, "normes_memoire": CAT.NORMES_MEMOIRE, "aires_memoire": CAT.AIRES_MEMOIRE,
-        "indices_memoire": CAT.INDICES_MEMOIRE, "axes_acp": CAT.AXES_ACP, "axes_acm": CAT.AXES_ACM, "zones": CAT.ZONES_CRITIQUES,
-        "recommandations": CAT.RECOMMANDATIONS, "hypotheses": CAT.HYPOTHESES, "fiabilite": CAT.FIABILITE})
+        "page": "statistiques", "normes_memoire": CAT.NORMES_MEMOIRE, "aires_memoire": CAT.AIRES_MEMOIRE,
+        "indices_memoire": CAT.INDICES_MEMOIRE, "zones": CAT.ZONES_CRITIQUES,
+        "hypotheses": CAT.HYPOTHESES, "fiabilite": CAT.FIABILITE})
 
 
 # --------------------------------------------------------------------------- meta
@@ -404,7 +404,7 @@ def api_lieux(request):
 def _stats_enquete(where="TRUE", params=None):
     params = params or []
     ind = ligne(f"""
-        SELECT count(*) AS n, round(avg(age), 1) AS age_moyen,
+        SELECT count(*) AS n,
                round(avg(duree_trajet_min) FILTER (WHERE duree_trajet_min > 0), 1) AS duree_moyenne_min,
                percentile_cont(0.5) WITHIN GROUP (ORDER BY duree_trajet_min) FILTER (WHERE duree_trajet_min > 0) AS duree_mediane_min,
                round((percentile_cont(0.5) WITHIN GROUP (ORDER BY distance_km))::numeric, 2) AS distance_mediane_km,
@@ -413,24 +413,10 @@ def _stats_enquete(where="TRUE", params=None):
                round(100.0 * count(*) FILTER (WHERE moyen_transport IS NOT NULL AND position('pied' in lower(moyen_transport)) > 0)
                      / NULLIF(count(moyen_transport), 0), 1) AS pct_a_pied
         FROM enquete_patient WHERE {where}""", params)
-    sexe = lignes(f"""SELECT sexe AS label, count(*) AS n FROM enquete_patient
-                      WHERE {where} AND NULLIF(btrim(sexe), '') IS NOT NULL GROUP BY 1 ORDER BY 2 DESC""", params)
     transport = lignes(f"""SELECT {TRANSPORT} AS label, count(*) AS n FROM enquete_patient
                            WHERE {where} AND NULLIF(btrim(moyen_transport), '') IS NOT NULL GROUP BY 1 ORDER BY 2 DESC""", params)
     instruction = lignes(f"""SELECT niveau_instruction AS label, count(*) AS n FROM enquete_patient
                              WHERE {where} AND NULLIF(btrim(niveau_instruction), '') IS NOT NULL GROUP BY 1 ORDER BY 2 DESC""", params)
-    # tranches d'age : l'age exact manque pour 601 patients, mais la tranche est connue pour tous ;
-    # les deux nomenclatures de la collecte ([20-29] et [21-30]) sont ramenees a des tranches decennales
-    age = lignes(f"""SELECT t.label, count(*) AS n FROM (
-                         SELECT CASE
-                           WHEN age IS NOT NULL THEN CASE WHEN age < 10 THEN '0-9' WHEN age < 20 THEN '10-19' WHEN age < 30 THEN '20-29'
-                                WHEN age < 40 THEN '30-39' WHEN age < 50 THEN '40-49' WHEN age < 60 THEN '50-59' WHEN age < 70 THEN '60-69' ELSE '70+' END
-                           ELSE CASE tranche_age WHEN '[0-10]' THEN '0-9' WHEN '[0-9]' THEN '0-9' WHEN '[11-20]' THEN '10-19' WHEN '[10-19]' THEN '10-19'
-                                WHEN '[21-30]' THEN '20-29' WHEN '[20-29]' THEN '20-29' WHEN '[31-40]' THEN '30-39' WHEN '[30-39]' THEN '30-39'
-                                WHEN '[41-50]' THEN '40-49' WHEN '[40-49]' THEN '40-49' WHEN '[51-60]' THEN '50-59' WHEN '[50-59]' THEN '50-59'
-                                WHEN '[60-69]' THEN '60-69' WHEN '[70-79]' THEN '70+' WHEN '[80 plus]' THEN '70+' END END AS label
-                         FROM enquete_patient WHERE {where}) t
-                     WHERE t.label IS NOT NULL GROUP BY 1 ORDER BY 1""", params)
     rz = ligne(f"""SELECT count(*) AS total,
                           count(*) FILTER (WHERE raison_proximite) AS proximite,
                           count(*) FILTER (WHERE raison_reputation) AS reputation,
@@ -445,8 +431,7 @@ def _stats_enquete(where="TRUE", params=None):
                             WHERE {where} AND NULLIF(btrim(quartier_residence_corrige), '') IS NOT NULL
                             GROUP BY 1 ORDER BY 2 DESC LIMIT 10""", params)
     # donnees renseignees / manquantes (affichees sous chaque graphique)
-    renseigne = ligne(f"""SELECT count(*) AS total, count(age) AS age_exact, count(tranche_age) AS tranche_age,
-                                 count(NULLIF(btrim(sexe), '')) AS sexe, count(niveau_instruction) AS instruction,
+    renseigne = ligne(f"""SELECT count(*) AS total, count(niveau_instruction) AS instruction,
                                  count(moyen_transport) AS transport, count(distance_km) AS distance,
                                  count(*) FILTER (WHERE duree_trajet_min > 0) AS duree, count(quartier_residence_corrige) AS quartier
                           FROM enquete_patient WHERE {where}""", params)
@@ -454,8 +439,8 @@ def _stats_enquete(where="TRUE", params=None):
                                  count(*) FILTER (WHERE distance_km >= 1 AND distance_km <= 3) AS de_1_a_3km,
                                  count(*) FILTER (WHERE distance_km > 3) AS plus_3km
                           FROM enquete_patient WHERE {where}""", params)
-    return {"indicateurs": ind, "sexe": sexe, "transport": transport, "instruction": instruction,
-            "age": age, "raisons": raisons, "provenance": provenance, "distances": distances, "renseigne": renseigne}
+    return {"indicateurs": ind, "transport": transport, "instruction": instruction,
+            "raisons": raisons, "provenance": provenance, "distances": distances, "renseigne": renseigne}
 
 
 @require_GET
@@ -483,7 +468,7 @@ def api_stats(request):
                round(c.population_2023::numeric / NULLIF(v.nb_postes, 0)) AS hab_par_poste,
                round(c.population_2023::numeric / NULLIF(v.nb_postes, 0) / {NORME_POSTE}, 1) AS ratio_norme_poste,
                (SELECT count(*) FROM indicateur_poste ip JOIN poste_sante p ON p.id = ip.poste_id
-                 WHERE p.commune_id = c.id AND ip.taux_couverture > 1) AS postes_sous_dotes,
+                 WHERE p.commune_id = c.id AND ip.type_maille <> 'Conforme') AS postes_sous_dotes,
                v.medecins, v.infirmiers, v.techniciens_sup, v.hab_par_medecin, v.hab_par_infirmier,
                (SELECT sum(nb_sages_femmes) FROM poste_sante p WHERE p.commune_id = c.id) AS sages_femmes,
                (SELECT sum(nb_lits) FROM poste_sante p WHERE p.commune_id = c.id) AS lits,
@@ -495,6 +480,7 @@ def api_stats(request):
                p.nb_medecins, p.nb_infirmiers, p.nb_sages_femmes, p.nb_techniciens_sup, p.nb_lits,
                r.hab_par_infirmier, r.hab_par_medecin, r.medecins_manquants, r.infirmiers_manquants,
                r.techniciens_manquants, r.norme_medecin_respectee, r.norme_infirmier_respectee,
+               r.infirmiers_requis, r.ecart_infirmiers, r.classe_infirmier,
                ip.population_theorique, ip.taux_couverture, ip.type_maille, ip.classe_kmeans, ip.classe_ch,
                ip.indice_forme, ip.indice_decentrement, ip.discordance_ta, ip.discordance_ar, ip.discordance_tr,
                (SELECT count(*) FROM enquete_patient e WHERE e.poste_id = p.id) AS patients
@@ -536,7 +522,7 @@ def api_stats(request):
     kpi["hab_par_infirmier"] = round(pop_adm / kpi["infirmiers"]) if kpi["infirmiers"] else None
     mailles = lignes("""SELECT type_maille AS label, count(*) AS n, min(taux_couverture) AS taux_min
                         FROM indicateur_poste GROUP BY 1 ORDER BY min(taux_couverture) DESC""")
-    kpi["postes_sous_dotes"] = sum(m["n"] for m in mailles if m["label"] != "Conforme ou sur-dotée")
+    kpi["postes_sous_dotes"] = sum(m["n"] for m in mailles if m["label"] != "Conforme")
     g = ligne("SELECT pct_cumule FROM grille_distance WHERE distance_max_m = 1000")
     kpi["superficie_1km_pct"] = g["pct_cumule"] if g else None
     classes = lignes("""SELECT c.code, c.methode, c.profil, count(ip.poste_id) AS n,
@@ -687,7 +673,7 @@ def export_couche(request, couche, fmt):
 
 # --------------------------------------------------------------------------- page Statistiques (tableaux du memoire)
 def _calc_distance_grille():
-    """Distance a vol d'oiseau de chaque point d'une grille de 100 m au poste le plus proche (section 4.1.4)."""
+    """Distance a vol d'oiseau de chaque point d'une grille de 100 m au poste le plus proche (section 3.5)."""
     return ligne(f"""
         WITH v AS (SELECT ST_Union(geom) AS g FROM quartier),
         pts AS (SELECT ST_Centroid(s.geom) AS g FROM v, ST_SquareGrid(100, v.g) s WHERE ST_Intersects(ST_Centroid(s.geom), v.g)),
@@ -716,8 +702,8 @@ def _stat_desc(valeurs):
 
 @require_GET
 def api_statistiques(request):
-    """Tableaux 2, 5, 6, 7, 8, 9, 12-15 et 17 du memoire, recalcules a partir de la base."""
-    # tableau 2 : personnel et lits par commune
+    """Tableaux 3-1 a 3-7, 3-11, 3-12 et annexe A-1 du memoire (version 3), recalcules a partir de la base."""
+    # tableau 3-1 : personnel et lits par commune
     offre = lignes("""
         SELECT c.nom AS commune, count(*) AS postes, sum(p.nb_medecins) AS medecins, sum(p.nb_infirmiers) AS infirmiers,
                sum(p.nb_sages_femmes) AS sages_femmes, sum(p.nb_techniciens_sup) AS techniciens, sum(p.nb_lits) AS lits
@@ -729,12 +715,12 @@ def api_statistiques(request):
     services = sorted(({"label": lib, "n": ligne(f"SELECT count(*) FILTER (WHERE {c}) AS n FROM poste_sante")["n"]} for c, lib in SERVICES),
                       key=lambda x: -x["n"])
 
-    # tableau 7 : couverture theorique par commune
+    # tableau 3-4 : couverture theorique par commune
     couverture = lignes(f"""
         SELECT c.nom AS commune, count(*) AS postes, round(sum(ip.superficie_theo_km2), 1) AS superficie_km2,
                c.population_2023 AS population, round(c.population_2023::numeric / count(*)) AS hab_par_poste,
                round(c.population_2023::numeric / count(*) / {NORME_POSTE}, 1) AS ratio_norme,
-               count(*) FILTER (WHERE ip.taux_couverture > 1) AS sous_dotes,
+               count(*) FILTER (WHERE ip.type_maille <> 'Conforme') AS sous_dotes,
                round(c.population_2023::numeric / NULLIF(sum(ip.superficie_theo_km2), 0)) AS densite
         FROM poste_sante p JOIN commune c ON c.id = p.commune_id JOIN indicateur_poste ip ON ip.poste_id = p.id
         GROUP BY c.id, c.nom, c.population_2023 ORDER BY c.nom""")
@@ -746,10 +732,10 @@ def api_statistiques(request):
     t["densite"] = round(t["population"] / t["superficie_km2"]) if t["superficie_km2"] else None
     couverture.append(t)
 
-    # tableau 8 : part de la superficie a proximite d'un poste
+    # tableau 3-5 : part de la superficie a proximite d'un poste
     grille = lignes("SELECT classe_de_distance, distance_max_m, pct_du_territoire, pct_cumule FROM grille_distance ORDER BY ordre")
 
-    # tableau 5 : concordance / discordance en superficie (km2) ; « sans donnee » = reste de la ville
+    # tableau 3-2 : concordance / discordance en superficie (km2) ; « sans donnee » = reste de la ville
     ville = float(ligne("SELECT sum(ST_Area(geom)) / 1e6 AS s FROM quartier")["s"])
     concordance = []
     for r in lignes("SELECT * FROM superficie_synthese ORDER BY pct_concordance DESC"):
@@ -760,7 +746,7 @@ def api_statistiques(request):
                             "pct_concordance": round(100 * float(r["pct_concordance"]), 1),
                             "pct_discordance": round(100 * float(r["pct_discordance"]), 1)})
 
-    # tableau 17 : indicateurs par poste
+    # annexe A-1 : indicateurs par poste
     postes = lignes(f"""
         SELECT p.id, p.numero, p.nom_usuel AS nom, c.nom AS commune, ip.superficie_theo_km2, ip.population_theorique,
                ip.taux_couverture, ip.type_maille, ip.indice_forme, ip.indice_decentrement,
@@ -772,19 +758,19 @@ def api_statistiques(request):
     indices = {k: _stat_desc([p[k] for p in postes]) for k in
                ("indice_forme", "indice_decentrement", "discordance_ta", "discordance_ar", "discordance_tr")}
 
-    # tableau 15 : typologie des mailles
+    # section 3.4 : typologie des mailles
     mailles = []
-    for typ, cond in (("Fortement sous-dotée", "> 2"), ("Sous-dotée", "1 à 2"), ("Conforme ou sur-dotée", "≤ 1")):
+    for typ, cond in (("Fortement sous-dotée", "> 2"), ("Sous-dotée", "1 à 2"), ("Conforme", "≤ 1")):
         l = sorted((p for p in postes if p["type_maille"] == typ), key=lambda p: -float(p["taux_couverture"]))
         mailles.append({"type": typ, "taux": cond, "n": len(l), "postes": [p["nom"] for p in l]})
 
-    # tableau 9 : postes les plus deficitaires en infirmiers
-    deficit = sorted((p for p in postes if p["hab_par_infirmier"] is not None), key=lambda p: -float(p["hab_par_infirmier"]))[:5]
+    # tableau 3-7 : postes les plus deficitaires en infirmiers
+    deficit = sorted((p for p in postes if p["nb_infirmiers"]), key=lambda p: p["nb_infirmiers"] - p["population_administrative"] / NORME_INFIRMIER)[:5]
     deficit = [{"nom": p["nom"], "population": p["population_administrative"], "infirmiers": p["nb_infirmiers"],
-                "requis": -(-p["population_administrative"] // NORME_INFIRMIER), "hab_par_infirmier": p["hab_par_infirmier"]}
+                "requis": round(p["population_administrative"] / NORME_INFIRMIER), "hab_par_infirmier": p["hab_par_infirmier"]}
                for p in deficit]
 
-    # tableaux 12-14 : classes et croisement K-means x CH
+    # tableaux 3-10 a 3-12 : classes et croisement K-means x CAH
     classes = lignes("""SELECT c.code, c.methode, c.profil, count(ip.poste_id) AS n,
                                string_agg(p.nom_usuel, ', ' ORDER BY p.numero) AS postes
                         FROM classe_offre c
@@ -796,7 +782,7 @@ def api_statistiques(request):
         croisement.setdefault(p["classe_kmeans"], {}).setdefault(p["classe_ch"], 0)
         croisement[p["classe_kmeans"]][p["classe_ch"]] += 1
 
-    # enquete patients (section 4.1.4)
+    # enquete patients (section 3.5)
     e = ligne("""
         SELECT count(distance_km) AS n,
                round(100.0 * count(*) FILTER (WHERE distance_km < 1) / count(distance_km), 1) AS moins_1km,
@@ -815,16 +801,16 @@ def api_statistiques(request):
         "transport": [{"label": x["label"], "pct": round(100.0 * x["n"] / nt, 1)} for x in enquete["transport"]],
         "raisons": [{"label": x["label"], "pct": round(100.0 * x["n"] / n, 1)} for x in enquete["raisons"]],
     }
-    # besoins en postes (section 4.3.1) : population communale / norme, arrondi au poste superieur
+    # besoins en postes (section 5.2.1) : population communale / norme, arrondi au poste superieur
     besoins = [{"commune": r["commune"], "postes": r["postes"], "population": r["population"],
-                "requis_norme": -(-r["population"] // NORME_POSTE), "requis_10000": -(-r["population"] // 10000)}
+                "requis_norme": -(-r["population"] // NORME_POSTE)}
                for r in couverture if r["commune"] != "Ville de Thiès"]
     besoins.append({"commune": "Ville de Thiès", "postes": sum(b["postes"] for b in besoins), "population": sum(b["population"] for b in besoins),
-                    "requis_norme": sum(b["requis_norme"] for b in besoins), "requis_10000": sum(b["requis_10000"] for b in besoins)})
+                    "requis_norme": sum(b["requis_norme"] for b in besoins)})
     for b in besoins:
-        b["manque_norme"] = b["requis_norme"] - b["postes"]; b["manque_10000"] = b["requis_10000"] - b["postes"]
+        b["manque_norme"] = b["requis_norme"] - b["postes"]
 
-    # polygones de Thiessen : tailles (section 4.1.1)
+    # polygones de Thiessen : tailles (section 3.2)
     thiessen = ligne("""SELECT round(avg(superficie_theo_km2), 1) AS moyenne, percentile_cont(0.5) WITHIN GROUP (ORDER BY superficie_theo_km2) AS mediane,
                                min(superficie_theo_km2) AS mini, max(superficie_theo_km2) AS maxi, round(sum(superficie_theo_km2), 1) AS total,
                                count(*) FILTER (WHERE superficie_theo_km2 > 7) AS grands,
@@ -845,13 +831,12 @@ def api_statistiques(request):
                    "identique": [x["nom"] for x in ar if x["reel_km2"] is not None and abs(x["reel_km2"] - x["adm_km2"]) <= 0.01],
                    "sans": [x["nom"] for x in ar if x["reel_km2"] is None],
                    "superficie_reelle_km2": float(ligne("SELECT round((ST_Area(ST_Union(q.geom)) / 1e6)::numeric, 1) AS s FROM aire_reelle a JOIN quartier q ON q.id = a.quartier_id")["s"])}
-    # croisement charge demographique x typologie (section 4.1.7)
+    # croisement charge demographique x typologie (section 3.8)
     maille_classe = lignes("SELECT type_maille, classe_kmeans, classe_ch, count(*) AS n FROM indicateur_poste GROUP BY 1, 2, 3")
 
     return reponse({"offre": offre, "services": services, "couverture": couverture, "grille": grille,
                     "besoins": besoins, "thiessen": thiessen, "reel_vs_adm": reel_vs_adm, "maille_classe": maille_classe,
                     "distance_grille": _distance_grille(), "sites": CAT.SITES_PROPOSES, "comparaisons": CAT.COMPARAISONS,
-                    "profils_kmeans": CAT.PROFILS_KMEANS,
                     "concordance": concordance, "superficie_ville_km2": round(ville, 1), "postes": postes, "indices": indices,
                     "mailles": mailles, "deficit_infirmiers": deficit, "classes": classes, "croisement": croisement,
                     "enquete": enquete_resume, "normes": NORMES})

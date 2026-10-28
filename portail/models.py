@@ -119,7 +119,7 @@ class IndicateurPoste(models.Model):
     numero = models.SmallIntegerField(null=True)
     superficie_theo_km2 = models.DecimalField("superficie aire théorique (km²)", max_digits=6, decimal_places=2, null=True)
     population_theorique = models.IntegerField("population de l'aire théorique", null=True)
-    taux_couverture = models.DecimalField("taux de couverture (pop. / 7 714)", max_digits=5, decimal_places=2, null=True)
+    taux_couverture = models.DecimalField("taux de couverture (pop. / 10 000)", max_digits=5, decimal_places=2, null=True)
     type_maille = models.CharField(max_length=30, null=True)
     indice_forme = models.DecimalField(max_digits=4, decimal_places=2, null=True)
     indice_decentrement = models.DecimalField(max_digits=4, decimal_places=2, null=True)
@@ -127,7 +127,7 @@ class IndicateurPoste(models.Model):
     discordance_ar = models.DecimalField("discordance administrative/réelle", max_digits=4, decimal_places=2, null=True)
     discordance_tr = models.DecimalField("discordance théorique/réelle", max_digits=4, decimal_places=2, null=True)
     classe_kmeans = models.CharField(max_length=3, null=True)
-    classe_ch = models.CharField(max_length=3, null=True)
+    classe_ch = models.CharField(max_length=5, null=True)
 
     class Meta:
         managed = False
