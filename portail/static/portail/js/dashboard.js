@@ -9,8 +9,8 @@
   }
   const badge = (ok) => '<span class="badge ' + (ok ? "ok" : "ko") + '">' + (ok ? "Respectée" : "Non respectée") + "</span>";
 
-  function tableau(el, colonnes, lignes, triInitial) {
-    let tri = triInitial || null, sens = -1;
+  function tableau(el, colonnes, lignes, triInitial, sensInitial) {
+    let tri = triInitial || null, sens = sensInitial || -1;
     function rendre(filtre) {
       let l = lignes.slice();
       if (filtre) { const f = filtre.toLowerCase(); l = l.filter(function (r) { return String(r.nom || r.commune || "").toLowerCase().indexOf(f) >= 0; }); }
@@ -55,17 +55,15 @@
     catch (e) { $("#kpis").innerHTML = '<div class="loading">Erreur de chargement : vérifiez la connexion à la base PostgreSQL.</div>'; return; }
 
     const k = s.kpi, n = s.normes, e = s.enquete, ind = e.indicateurs;
-    const femmes = (e.sexe.filter(function (x) { return x.label === "Femme"; })[0] || {}).n || 0;
     $("#kpis").innerHTML =
       kpi(fmt(k.nb_postes), "postes de santé publics") +
-      kpi(fmt(k.medecins), "médecins (norme : " + fmt(k.medecins_requis) + " requis)", "bad") +
-      kpi(fmt(k.infirmiers), "infirmiers (norme : " + fmt(k.infirmiers_requis) + " requis)", "warn") +
+      kpi(fmt(k.medecins), "médecins (repère : " + fmt(k.medecins_requis) + " requis)", "bad") +
+      kpi(fmt(k.infirmiers), "infirmiers (repère : " + fmt(k.infirmiers_requis) + " requis)", "warn") +
       kpi(fmt(k.sages_femmes), "sages-femmes") + kpi(fmt(k.techniciens_sup), "techniciens supérieurs") + kpi(fmt(k.lits_total), "lits") +
-      kpi(fmt(k.hab_par_infirmier), "hab. par infirmier (OMS : 5 000)", "warn") +
-      kpi(n.infirmier_ok + " / " + n.n, "postes respectant la norme infirmiers", "warn") +
-      kpi(n.medecin_ok + " / " + n.n, "poste respectant la norme médecins", "bad") +
+      kpi(fmt(k.hab_par_infirmier), "hab. par infirmier (repère : 5 000)", "warn") +
+      kpi(fmt(n.n - n.infirmier_ok) + " / " + n.n, "postes en deçà du repère infirmiers", "warn") +
+      kpi(n.medecin_ok + " / " + n.n, "poste doté de médecins", "bad") +
       kpi(fmt(ind.n), "patients enquêtés") +
-      kpi(fmt(ind.n ? 100 * femmes / ind.n : null, 1) + " %", "de femmes parmi les patients") +
       kpi(fmt(ind.pct_a_pied, 1) + " %", "des patients viennent à pied") +
       kpi(fmt(ind.distance_mediane_km, 1) + " km", "distance médiane déclarée") +
       kpi(fmt(ind.duree_mediane_min, 0) + " min", "durée médiane du trajet");
@@ -81,8 +79,8 @@
       options: { scales: { x: { stacked: true }, y: { stacked: true, beginAtZero: true } } } });
     GP.graphique($("#c-normes"), { type: "bar",
       data: { labels: ["Médecins (1 / 10 000)", "Infirmiers (1 / 5 000)", "Techniciens (1 / 5 000)"], datasets: [
-        { label: "Norme respectée", data: [n.medecin_ok, n.infirmier_ok, n.technicien_ok], backgroundColor: "#22c55e" },
-        { label: "Norme non respectée", data: [n.n - n.medecin_ok, n.n - n.infirmier_ok, n.n - n.technicien_ok], backgroundColor: "#ef4444" }] },
+        { label: "Repère respecté", data: [n.medecin_ok, n.infirmier_ok, n.technicien_ok], backgroundColor: "#22c55e" },
+        { label: "Repère non respecté", data: [n.n - n.medecin_ok, n.n - n.infirmier_ok, n.n - n.technicien_ok], backgroundColor: "#ef4444" }] },
       options: { indexAxis: "y", scales: { x: { stacked: true, max: n.n }, y: { stacked: true } } } });
     const ps = s.postes.filter(function (p) { return p.hab_par_infirmier !== null; }).sort(function (a, b) { return b.hab_par_infirmier - a.hab_par_infirmier; });
     GP.graphique($("#c-ratio"), {
@@ -90,8 +88,8 @@
       data: { labels: ps.map(function (p) { return p.nom.replace(/^PS /, ""); }),
               datasets: [
                 { label: "Hab. / infirmier", data: ps.map(function (p) { return p.hab_par_infirmier; }),
-                  backgroundColor: ps.map(function (p) { return p.hab_par_infirmier > 5000 ? "#dc2626" : "#16a34a"; }), borderRadius: 3 },
-                { type: "line", label: "Norme OMS (5 000)", data: ps.map(function () { return 5000; }), borderColor: GP.couleur("norme"), borderDash: [6, 4], pointRadius: 0, borderWidth: 2 }] },
+                  backgroundColor: ps.map(function (p) { return ({ "Déficit fort": "#991b1b", "Déficit moyen": "#f97316", "Déficit faible": "#fa8072", "Surplus faible": "#86efac", "Surplus moyen": "#22c55e", "Surplus fort": "#166534" })[p.classe_infirmier] || (p.hab_par_infirmier > 5000 ? "#dc2626" : "#16a34a"); }), borderRadius: 3 },
+                { type: "line", label: "Repère (5 000)", data: ps.map(function () { return 5000; }), borderColor: GP.couleur("norme"), borderDash: [6, 4], pointRadius: 0, borderWidth: 2 }] },
       options: { scales: { x: { ticks: { maxRotation: 70, minRotation: 45, autoSkip: false } } } },
     });
     tableau($("#t-commune"), [
@@ -100,16 +98,18 @@
       { k: "lits", t: "Lits", num: true }, { k: "population", t: "Population desservie", num: true },
       { k: "hab_par_infirmier", t: "Hab./infirmier", num: true }, { k: "patients", t: "Patients enquêtés", num: true },
     ], pc);
+    const INF = { "Déficit fort": ["#991b1b", "#fff"], "Déficit moyen": ["#f97316", "#fff"], "Déficit faible": ["#fa8072", "#3b0a0a"],
+                  "Surplus faible": ["#86efac", "#052e16"], "Surplus moyen": ["#22c55e", "#052e16"], "Surplus fort": ["#166534", "#fff"] };
+    const ordre = s.postes.slice().sort(function (a, b) { return (a.rang_infirmier || 99) - (b.rang_infirmier || 99); });   // rang du tableau 3-6
     const filtrer = tableau($("#t-postes"), [
-      { k: "numero", t: "N°", num: true }, { k: "nom", t: "Poste" }, { k: "commune", t: "Commune" }, { k: "population", t: "Population", num: true },
-      { k: "nb_medecins", t: "Méd.", num: true }, { k: "nb_infirmiers", t: "Inf.", num: true }, { k: "nb_sages_femmes", t: "SF", num: true },
-      { k: "nb_techniciens_sup", t: "Tech.", num: true }, { k: "nb_lits", t: "Lits", num: true },
+      { k: "rang_infirmier", t: "Rang", num: true }, { k: "nom", t: "Poste" }, { k: "commune", t: "Commune" }, { k: "population", t: "Population", num: true },
+      { k: "nb_infirmiers", t: "Inf. en poste", num: true }, { k: "infirmiers_requis", t: "Inf. requis", num: true },
+      { k: "ecart_infirmiers", t: "Écart", num: true, f: function (v) { return v === null || v === undefined ? "–" : "<b>" + (v > 0 ? "+" : "") + fmt(v) + "</b>"; } },
+      { k: "classe_infirmier", t: "Classe", f: function (v) { const c = INF[v]; return v ? '<span class="badge" style="background:' + (c ? c[0] : "#64748b") + ";color:" + (c ? c[1] : "#fff") + '">' + esc(v) + "</span>" : "–"; } },
       { k: "hab_par_infirmier", t: "Hab./inf.", num: true, f: function (v) { return v === null || v === undefined ? "aucun" : fmt(v); } },
-      { k: "norme_infirmier_respectee", t: "Norme inf.", f: function (v) { return badge(v); } },
-      { k: "norme_medecin_respectee", t: "Norme méd.", f: function (v) { return badge(v); } },
-      { k: "infirmiers_manquants", t: "Inf. manquants", num: true }, { k: "medecins_manquants", t: "Méd. manquants", num: true },
-      { k: "patients", t: "Patients enq.", num: true },
-    ], s.postes, "hab_par_infirmier");
+      { k: "nb_medecins", t: "Méd.", num: true }, { k: "nb_sages_femmes", t: "SF", num: true }, { k: "nb_techniciens_sup", t: "Tech.", num: true },
+      { k: "nb_lits", t: "Lits", num: true }, { k: "patients", t: "Patients enq.", num: true },
+    ], ordre, "rang_infirmier", 1);
     $("#t-filtre").addEventListener("input", function (ev) { filtrer(ev.target.value); });
     if (k.techniciens_sup !== k.techniciens_sup_ratios)
       $("#note-tech").textContent = "Note : le nombre de techniciens supérieurs diffère entre le fichier d'offre (" + k.techniciens_sup +
@@ -123,8 +123,6 @@
 
     /* ---- enquete patients */
     GP.barres($("#c-commune"), pc.map(function (c) { return { label: c.commune, n: c.patients }; }));
-    GP.anneau($("#c-sexe"), e.sexe);
-    GP.barres($("#c-age"), e.age, { couleur: GP.COULEURS[2] });
     GP.anneau($("#c-instruction"), e.instruction);
     GP.barres($("#c-transport"), e.transport, { horizontal: true, couleur: GP.COULEURS[1] });
     const d = e.distances || {};
@@ -140,12 +138,11 @@
       p.textContent = "n = " + fmt(n) + " patient" + (n > 1 ? "s" : "") + (n < T ? " · " + fmt(T - n) + " non renseigné" + (T - n > 1 ? "s" : "") : " · données complètes") + (txt ? " · " + txt : "");
       c.parentNode.appendChild(p);
     };
-    note("c-commune", T); note("c-sexe", R.sexe); note("c-age", R.tranche_age, "âge exact connu pour " + fmt(R.age_exact) + ", tranche d'âge pour tous");
+    note("c-commune", T);
     note("c-instruction", R.instruction); note("c-transport", R.transport); note("c-distance", R.distance);
     note("c-raisons", T, "plusieurs réponses possibles"); note("c-provenance", R.quartier);
     $("#q-total").textContent = fmt(T);
     const lignesQ = [
-      { v: "Sexe", n: R.sexe }, { v: "Tranche d'âge", n: R.tranche_age }, { v: "Âge exact", n: R.age_exact, c: "Tranche d'âge utilisée pour les graphiques (deux nomenclatures harmonisées)." },
       { v: "Niveau d'instruction", n: R.instruction, c: "Question non posée dans : " + (Q.instruction_par_poste || []).map(function (x) { return x.nom + " (" + x.manquants + "/" + x.total + ")"; }).join(", ") + "." },
       { v: "Moyen de transport", n: R.transport }, { v: "Distance déclarée", n: R.distance, c: "Valeurs aberrantes (trajet de 400 km) exclues lors du nettoyage." },
       { v: "Durée du trajet", n: R.duree, c: fmt(Q.duree_zero) + " durées égales à 0 et " + fmt(Q.duree_vide) + " vides ou négatives : seules les durées positives sont utilisées." },

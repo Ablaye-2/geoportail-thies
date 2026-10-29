@@ -1,0 +1,20 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 240 130" role="img" aria-label="Aire théorique : polygones de Thiessen autour des postes">
+  <rect width="240" height="130" rx="16" fill="#dcf7ec"/>
+  <g stroke="#047857" stroke-width="2.5" stroke-linejoin="round">
+    <path d="M14 14 H96 L84 62 L40 72 L14 58Z" fill="#a7f3d0"/>
+    <path d="M96 14 H170 L158 56 L120 70 L84 62Z" fill="#6ee7b7"/>
+    <path d="M170 14 H226 V70 L196 80 L158 56Z" fill="#a7f3d0"/>
+    <path d="M14 58 L40 72 L52 116 H14Z" fill="#6ee7b7"/>
+    <path d="M40 72 L84 62 L120 70 L126 116 H52Z" fill="#d1fae5"/>
+    <path d="M120 70 L158 56 L196 80 L190 116 H126Z" fill="#6ee7b7"/>
+    <path d="M196 80 L226 70 V116 H190Z" fill="#d1fae5"/>
+  </g>
+  <g fill="#fff" stroke="#065f46" stroke-width="2">
+    <circle cx="50" cy="38" r="9"/><circle cx="128" cy="38" r="9"/><circle cx="198" cy="42" r="9"/>
+    <circle cx="30" cy="94" r="9"/><circle cx="88" cy="94" r="9"/><circle cx="160" cy="92" r="9"/><circle cx="212" cy="98" r="7"/>
+  </g>
+  <g stroke="#ef4444" stroke-width="3.5" stroke-linecap="round">
+    <path d="M50 33 v10 M45 38 h10"/><path d="M128 33 v10 M123 38 h10"/><path d="M198 37 v10 M193 42 h10"/>
+    <path d="M30 89 v10 M25 94 h10"/><path d="M88 89 v10 M83 94 h10"/><path d="M160 87 v10 M155 92 h10"/><path d="M212 94 v8 M208 98 h8"/>
+  </g>
+</svg>

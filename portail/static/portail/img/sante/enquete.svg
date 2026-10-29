@@ -1,0 +1,10 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 120 96" role="img" aria-label="Enquête auprès des patients">
+  <rect width="120" height="96" rx="16" fill="#ffedd5"/>
+  <rect x="32" y="16" width="56" height="70" rx="7" fill="#fff" stroke="#c2410c" stroke-width="2.5"/>
+  <rect x="48" y="10" width="24" height="12" rx="4" fill="#f97316"/>
+  <g stroke-linecap="round" stroke-width="3.5">
+    <path d="M42 36 l4 4 l7 -8" stroke="#16a34a" fill="none" stroke-linejoin="round"/><path d="M60 36 h18" stroke="#fdba74"/>
+    <path d="M42 52 l4 4 l7 -8" stroke="#16a34a" fill="none" stroke-linejoin="round"/><path d="M60 52 h18" stroke="#fdba74"/>
+    <path d="M42 68 l4 4 l7 -8" stroke="#16a34a" fill="none" stroke-linejoin="round"/><path d="M60 68 h12" stroke="#fdba74"/>
+  </g>
+</svg>

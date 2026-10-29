@@ -1,6 +1,6 @@
 {% extends "portail/base.html" %}
 {% load static %}
-{% block title %}Données · Géoportail santé Thiès{% endblock %}
+{% block title %}Données · Géoportail du Maillage Sanitaire{% endblock %}
 
 {% block content %}
 <main class="ctq dnx">
@@ -87,5 +87,5 @@
 {% endblock %}
 
 {% block scripts %}
-<script src="{% static 'portail/js/donnees.js' %}"></script>
+<script src="{% static 'portail/js/donnees.js' %}?v={{ VERSION }}"></script>
 {% endblock %}

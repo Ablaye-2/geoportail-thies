@@ -1,0 +1,5 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 120 96" role="img" aria-label="Repères de couverture sanitaire">
+  <rect width="120" height="96" rx="16" fill="#fee2e2"/>
+  <path d="M60 12 l30 10 v22 c0 20 -14 32 -30 40 c-16 -8 -30 -20 -30 -40 v-22z" fill="#fff" stroke="#b91c1c" stroke-width="2.5" stroke-linejoin="round"/>
+  <path d="M60 32 v26 M47 45 h26" stroke="#ef4444" stroke-width="8" stroke-linecap="round"/>
+</svg>

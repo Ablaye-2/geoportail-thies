@@ -1,7 +1,7 @@
 {% extends "portail/base.html" %}
 {% load static %}
 
-{% block head %}<link rel="stylesheet" href="{% static 'portail/css/carte.css' %}">{% endblock %}
+{% block head %}<link rel="stylesheet" href="{% static 'portail/css/carte.css' %}?v={{ VERSION }}">{% endblock %}
 
 {% block topbar_extra %}
   <div class="search">
@@ -11,7 +11,7 @@
   </div>
 {% endblock %}
 
-{% block title %}Géoportail · Maille sanitaire de Thiès{% endblock %}
+{% block title %}Géoportail du Maillage Sanitaire · Thiès{% endblock %}
 
 
 
@@ -138,6 +138,10 @@
   <section class="ccol">
     <div class="mapcard">
       <div id="map"></div>
+      <!-- agrandir la carte : masquer / afficher les panneaux lateraux -->
+      <button class="edge-tog left" id="tog-left" type="button" title="Masquer le panneau de gauche" aria-label="Masquer le panneau de gauche" aria-pressed="false">‹</button>
+      <button class="edge-tog right" id="tog-right" type="button" title="Masquer le panneau de droite" aria-label="Masquer le panneau de droite" aria-pressed="false">›</button>
+      <button class="map-max" id="tog-max" type="button" title="Agrandir la carte" aria-pressed="false"><span class="ico">⤢</span><span class="txt">Agrandir la carte</span></button>
 
       <div class="seg" role="group" aria-label="Fond de carte">
         <button class="seg-b" type="button" data-fond="Plan sombre (Esri)">🌙 Plan</button>
@@ -315,5 +319,5 @@
 
 {% block scripts %}
 <script>window.GP_ROUTAGE = "{{ ROUTAGE_URL|escapejs }}";</script>
-<script src="{% static 'portail/js/carte.js' %}"></script>
+<script src="{% static 'portail/js/carte.js' %}?v={{ VERSION }}"></script>
 {% endblock %}

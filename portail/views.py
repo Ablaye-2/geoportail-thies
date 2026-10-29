@@ -67,6 +67,20 @@ NORMES = {"poste": NORME_POSTE, "medecin": NORME_MEDECIN, "infirmier": NORME_INF
 
 # nom affiche d'un poste : nom usuel du memoire (« PS Thiès Nonè »), a defaut le nom de la base
 NOM_P = "COALESCE('PS ' || p.nom_usuel, p.nom)"
+# typologie des mailles recalculee depuis la population de l'aire theorique (repere 10 000 hab. par poste) :
+# ne depend pas du libelle enregistre (qu'un import SQL sous Windows peut abimer : « dotÃ©e »)
+TM = ("(CASE WHEN ip.population_theorique > 20000 THEN 'Fortement sous-dotée' WHEN ip.population_theorique > 10000 THEN 'Sous-dotée' "
+      "WHEN ip.population_theorique IS NOT NULL THEN 'Conforme' END)")
+# Tableau 3-6 du memoire : infirmiers requis = population administrative / 5 000 (arrondi), ecart = en poste - requis ;
+# rang selon l'ecart non arrondi, classes par tranches de rang (legende du memoire : 1-7, 8-13, 14-18, 19-22, 23-26, 27-28)
+INF_SQL = """(SELECT t.poste_id, t.infirmiers_requis, t.ecart_infirmiers, t.rang_infirmier,
+       CASE WHEN t.rang_infirmier <= 7 THEN 'Déficit fort' WHEN t.rang_infirmier <= 13 THEN 'Déficit moyen'
+            WHEN t.rang_infirmier <= 18 THEN 'Déficit faible' WHEN t.rang_infirmier <= 22 THEN 'Surplus faible'
+            WHEN t.rang_infirmier <= 26 THEN 'Surplus moyen' ELSE 'Surplus fort' END AS classe_infirmier
+  FROM (SELECT x.id AS poste_id, round(x.population_administrative / 5000.0)::int AS infirmiers_requis,
+               COALESCE(x.nb_infirmiers, 0) - round(x.population_administrative / 5000.0)::int AS ecart_infirmiers,
+               row_number() OVER (ORDER BY COALESCE(x.nb_infirmiers, 0) - x.population_administrative / 5000.0, x.id)::int AS rang_infirmier
+        FROM poste_sante x WHERE x.population_administrative IS NOT NULL) t)"""
 
 
 def _float(request, nom, defaut=None, mini=None, maxi=None):
@@ -165,7 +179,8 @@ SELECT p.id, {NOM_P} AS nom, p.numero, p.nom_usuel, p.nom AS nom_base, c.nom AS 
        r.hab_par_infirmier, r.hab_par_medecin,
        r.medecins_manquants, r.infirmiers_manquants, r.techniciens_manquants,
        r.norme_medecin_respectee, r.norme_infirmier_respectee,
-       ip.superficie_theo_km2, ip.population_theorique, ip.taux_couverture, ip.type_maille,
+       inf.infirmiers_requis, inf.ecart_infirmiers, inf.rang_infirmier, inf.classe_infirmier,
+       ip.superficie_theo_km2, ip.population_theorique, ip.taux_couverture, {TM} AS type_maille,
        ip.indice_forme, ip.indice_decentrement, ip.discordance_ta, ip.discordance_ar, ip.discordance_tr,
        ip.classe_kmeans, ck.profil AS profil_kmeans, ip.classe_ch, cc.profil AS profil_ch,
        COALESCE(e.n, 0) AS nb_patients, e.dist_med_km, e.duree_moy_min,
@@ -174,6 +189,7 @@ SELECT p.id, {NOM_P} AS nom, p.numero, p.nom_usuel, p.nom AS nom_base, c.nom AS 
 FROM poste_sante p
 LEFT JOIN commune c ON c.id = p.commune_id
 LEFT JOIN ratio_poste r ON r.poste_id = p.id
+LEFT JOIN {INF_SQL} inf ON inf.poste_id = p.id
 LEFT JOIN indicateur_poste ip ON ip.poste_id = p.id
 LEFT JOIN classe_offre ck ON ck.code = ip.classe_kmeans
 LEFT JOIN classe_offre cc ON cc.code = ip.classe_ch
@@ -266,7 +282,7 @@ THIESSEN_SQL = f"""
     SELECT cel.id, cel.nom AS poste, cel.numero, round(ST_Area(cel.g) / 10000) AS superficie_ha,
            (SELECT round(sum(q.population_2023 * ST_Area(ST_Intersection(q.geom, cel.g)) / NULLIF(ST_Area(q.geom), 0)))
               FROM quartier q WHERE ST_Intersects(q.geom, cel.g)) AS population_estimee,
-           ip.population_theorique, ip.taux_couverture, ip.type_maille, ip.indice_forme, ip.indice_decentrement,
+           ip.population_theorique, ip.taux_couverture, {TM} AS type_maille, ip.indice_forme, ip.indice_decentrement,
            ST_AsGeoJSON(ST_Transform(ST_Multi(cel.g), 4326), 6) AS geometry
     FROM cel LEFT JOIN indicateur_poste ip ON ip.poste_id = cel.id
     ORDER BY cel.numero NULLS LAST, cel.nom"""
@@ -300,7 +316,7 @@ COMMUNES_SQL = f"""
 
 INDICATEURS_SQL = f"""
     SELECT p.id, p.numero, p.nom_usuel AS poste, c.nom AS commune, ip.superficie_theo_km2, ip.population_theorique,
-           ip.taux_couverture, ip.type_maille, ip.indice_forme, ip.indice_decentrement, ip.discordance_ta,
+           ip.taux_couverture, {TM} AS type_maille, ip.indice_forme, ip.indice_decentrement, ip.discordance_ta,
            ip.discordance_ar, ip.discordance_tr, ip.classe_kmeans, ip.classe_ch,
            p.population_administrative, p.nb_medecins, p.nb_infirmiers, p.nb_sages_femmes, p.nb_techniciens_sup, p.nb_lits,
            r.hab_par_infirmier, r.norme_infirmier_respectee, r.norme_medecin_respectee,
@@ -468,7 +484,7 @@ def api_stats(request):
                round(c.population_2023::numeric / NULLIF(v.nb_postes, 0)) AS hab_par_poste,
                round(c.population_2023::numeric / NULLIF(v.nb_postes, 0) / {NORME_POSTE}, 1) AS ratio_norme_poste,
                (SELECT count(*) FROM indicateur_poste ip JOIN poste_sante p ON p.id = ip.poste_id
-                 WHERE p.commune_id = c.id AND ip.type_maille <> 'Conforme') AS postes_sous_dotes,
+                 WHERE p.commune_id = c.id AND {TM} <> 'Conforme') AS postes_sous_dotes,
                v.medecins, v.infirmiers, v.techniciens_sup, v.hab_par_medecin, v.hab_par_infirmier,
                (SELECT sum(nb_sages_femmes) FROM poste_sante p WHERE p.commune_id = c.id) AS sages_femmes,
                (SELECT sum(nb_lits) FROM poste_sante p WHERE p.commune_id = c.id) AS lits,
@@ -480,11 +496,12 @@ def api_stats(request):
                p.nb_medecins, p.nb_infirmiers, p.nb_sages_femmes, p.nb_techniciens_sup, p.nb_lits,
                r.hab_par_infirmier, r.hab_par_medecin, r.medecins_manquants, r.infirmiers_manquants,
                r.techniciens_manquants, r.norme_medecin_respectee, r.norme_infirmier_respectee,
-               r.infirmiers_requis, r.ecart_infirmiers, r.classe_infirmier,
-               ip.population_theorique, ip.taux_couverture, ip.type_maille, ip.classe_kmeans, ip.classe_ch,
+               inf.infirmiers_requis, inf.ecart_infirmiers, inf.rang_infirmier, inf.classe_infirmier,
+               ip.population_theorique, ip.taux_couverture, {TM} AS type_maille, ip.classe_kmeans, ip.classe_ch,
                ip.indice_forme, ip.indice_decentrement, ip.discordance_ta, ip.discordance_ar, ip.discordance_tr,
                (SELECT count(*) FROM enquete_patient e WHERE e.poste_id = p.id) AS patients
         FROM poste_sante p JOIN commune c ON c.id = p.commune_id LEFT JOIN ratio_poste r ON r.poste_id = p.id
+        LEFT JOIN {INF_SQL} inf ON inf.poste_id = p.id
         LEFT JOIN indicateur_poste ip ON ip.poste_id = p.id
         ORDER BY p.numero NULLS LAST, p.nom""")
 
@@ -520,8 +537,8 @@ def api_stats(request):
     kpi["medecins_requis"] = round(pop_adm / NORME_MEDECIN)
     kpi["infirmiers_requis"] = round(pop_adm / NORME_INFIRMIER)
     kpi["hab_par_infirmier"] = round(pop_adm / kpi["infirmiers"]) if kpi["infirmiers"] else None
-    mailles = lignes("""SELECT type_maille AS label, count(*) AS n, min(taux_couverture) AS taux_min
-                        FROM indicateur_poste GROUP BY 1 ORDER BY min(taux_couverture) DESC""")
+    mailles = lignes(f"""SELECT {TM} AS label, count(*) AS n, min(ip.taux_couverture) AS taux_min
+                        FROM indicateur_poste ip GROUP BY 1 ORDER BY min(ip.taux_couverture) DESC""")
     kpi["postes_sous_dotes"] = sum(m["n"] for m in mailles if m["label"] != "Conforme")
     g = ligne("SELECT pct_cumule FROM grille_distance WHERE distance_max_m = 1000")
     kpi["superficie_1km_pct"] = g["pct_cumule"] if g else None
@@ -720,7 +737,7 @@ def api_statistiques(request):
         SELECT c.nom AS commune, count(*) AS postes, round(sum(ip.superficie_theo_km2), 1) AS superficie_km2,
                c.population_2023 AS population, round(c.population_2023::numeric / count(*)) AS hab_par_poste,
                round(c.population_2023::numeric / count(*) / {NORME_POSTE}, 1) AS ratio_norme,
-               count(*) FILTER (WHERE ip.type_maille <> 'Conforme') AS sous_dotes,
+               count(*) FILTER (WHERE {TM} <> 'Conforme') AS sous_dotes,
                round(c.population_2023::numeric / NULLIF(sum(ip.superficie_theo_km2), 0)) AS densite
         FROM poste_sante p JOIN commune c ON c.id = p.commune_id JOIN indicateur_poste ip ON ip.poste_id = p.id
         GROUP BY c.id, c.nom, c.population_2023 ORDER BY c.nom""")
@@ -749,7 +766,7 @@ def api_statistiques(request):
     # annexe A-1 : indicateurs par poste
     postes = lignes(f"""
         SELECT p.id, p.numero, p.nom_usuel AS nom, c.nom AS commune, ip.superficie_theo_km2, ip.population_theorique,
-               ip.taux_couverture, ip.type_maille, ip.indice_forme, ip.indice_decentrement,
+               ip.taux_couverture, {TM} AS type_maille, ip.indice_forme, ip.indice_decentrement,
                ip.discordance_ta, ip.discordance_ar, ip.discordance_tr, ip.classe_kmeans, ip.classe_ch,
                p.population_administrative, p.nb_infirmiers, p.nb_medecins, r.hab_par_infirmier
         FROM poste_sante p JOIN commune c ON c.id = p.commune_id
@@ -832,7 +849,7 @@ def api_statistiques(request):
                    "sans": [x["nom"] for x in ar if x["reel_km2"] is None],
                    "superficie_reelle_km2": float(ligne("SELECT round((ST_Area(ST_Union(q.geom)) / 1e6)::numeric, 1) AS s FROM aire_reelle a JOIN quartier q ON q.id = a.quartier_id")["s"])}
     # croisement charge demographique x typologie (section 3.8)
-    maille_classe = lignes("SELECT type_maille, classe_kmeans, classe_ch, count(*) AS n FROM indicateur_poste GROUP BY 1, 2, 3")
+    maille_classe = lignes(f"SELECT {TM} AS type_maille, ip.classe_kmeans, ip.classe_ch, count(*) AS n FROM indicateur_poste ip GROUP BY 1, 2, 3")
 
     return reponse({"offre": offre, "services": services, "couverture": couverture, "grille": grille,
                     "besoins": besoins, "thiessen": thiessen, "reel_vs_adm": reel_vs_adm, "maille_classe": maille_classe,

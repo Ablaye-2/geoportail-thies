@@ -1,6 +1,6 @@
 {% extends "portail/base.html" %}
 {% load static %}
-{% block title %}Géoportail santé · Thiès — Accueil{% endblock %}
+{% block title %}Géoportail du Maillage Sanitaire de Thiès — Accueil{% endblock %}
 
 {% block footer %}{% endblock %}
 
@@ -10,6 +10,11 @@
   <!-- ===================== HERO ===================== -->
   <section class="hero">
     <div class="hero-bg hero-photo" aria-hidden="true" style="--hero-photo: url('{% static 'portail/img/accueil_poste_sante.jpg' %}')">
+      <!-- arriere-plan video (photos sante en fondu, en boucle, sans son) ; la photo du poste reste en secours -->
+      <video class="hero-video" autoplay muted loop playsinline preload="auto" poster="{% static 'portail/img/accueil_fond.jpg' %}" disablepictureinpicture tabindex="-1">
+        <source src="{% static 'portail/img/accueil_fond.webm' %}" type="video/webm">
+        <source src="{% static 'portail/img/accueil_fond.mp4' %}" type="video/mp4">
+      </video>
       <svg viewBox="0 0 1600 900" preserveAspectRatio="xMidYMid slice" xmlns="http://www.w3.org/2000/svg" focusable="false">
         <defs>
           <radialGradient id="glow" cx="72%" cy="38%" r="62%">
@@ -55,7 +60,7 @@
 
     <div class="hero-inner">
       <span class="eyebrow">Ville de Thiès · Sénégal</span>
-      <h1>Géoportail de la <em>maille sanitaire</em></h1>
+      <h1>Géoportail du <em>Maillage Sanitaire</em></h1>
       <p class="hero-lead">Visualisez où se trouvent les postes de santé, qui ils desservent réellement et où l'accès aux soins reste difficile.
         Un outil pour décider, planifier et orienter les habitants.</p>
       <div class="hero-cta">
@@ -79,10 +84,11 @@
     <h2>Que pouvez-vous faire ici ?</h2>
     <p class="section-lead">Un outil cartographique, pour les habitants comme pour les professionnels de santé et les décideurs.</p>
     <div class="cards">
-      <a class="fcard" href="{% url 'geoportail' %}">
-        <span class="ico">🗺️</span><h3>Géoportail</h3>
+      <a class="fcard illu" href="{% url 'geoportail' %}">
+        <img class="fcard-img" src="{% static 'portail/img/sante/poste_sante.svg' %}" alt="Illustration d'un poste de santé" width="320" height="220">
+        <div><h3>Géoportail</h3>
         <p>Postes de santé, quartiers, aires de desserte et flux de patients. Fiches détaillées, analyses spatiales et itinéraire par les rues jusqu'à un poste.</p>
-        <span class="more">Explorer →</span>
+        <span class="more">Explorer →</span></div>
       </a>
     </div>
   </section>
@@ -92,11 +98,11 @@
     <h2>Comprendre la maille sanitaire</h2>
     <p class="section-lead">Chaque poste de santé dessert un territoire. Ce géoportail compare trois façons de le définir.</p>
     <div class="aires">
-      <div class="aire"><span class="dot" style="background:#8b5cf6"></span><h3>Aire administrative</h3>
+      <div class="aire"><img class="aire-img" src="{% static 'portail/img/sante/aire_administrative.svg' %}" alt="" width="240" height="130"><span class="dot" style="background:#8b5cf6"></span><h3>Aire administrative</h3>
         <p>Les quartiers officiellement rattachés à chaque poste par le découpage sanitaire.</p></div>
-      <div class="aire"><span class="dot" style="background:#f59e0b"></span><h3>Aire réelle</h3>
+      <div class="aire"><img class="aire-img" src="{% static 'portail/img/sante/aire_reelle.svg' %}" alt="" width="240" height="130"><span class="dot" style="background:#f59e0b"></span><h3>Aire réelle</h3>
         <p>Les quartiers d'où viennent réellement les patients, d'après l'enquête (au moins 5 % du flux d'un poste).</p></div>
-      <div class="aire"><span class="dot" style="background:#10b981"></span><h3>Aire théorique</h3>
+      <div class="aire"><img class="aire-img" src="{% static 'portail/img/sante/aire_theorique.svg' %}" alt="" width="240" height="130"><span class="dot" style="background:#10b981"></span><h3>Aire théorique</h3>
         <p>La zone la plus proche de chaque poste (polygones de Thiessen), indépendamment du découpage officiel.</p></div>
     </div>
     <p class="section-lead small">Leur comparaison révèle les quartiers mal desservis, les postes saturés et les écarts entre le découpage officiel et les habitudes des habitants.</p>
@@ -105,17 +111,17 @@
   <!-- ===================== SOURCES / PIED ===================== -->
   <section class="section">
     <h2>Les données</h2>
-    <ul class="sources">
-      <li><b>Population :</b> recensement 2023, par quartier</li>
-      <li><b>Postes de santé :</b> personnel, services, équipements et position GPS</li>
-      <li><b>Enquête :</b> {{ stats.patients }} patients interrogés dans {{ stats.postes }} postes</li>
-      <li><b>Normes :</b> recommandations de l'OMS (1 médecin pour 10 000 habitants, 1 infirmier pour 5 000)</li>
-    </ul>
+    <div class="sources-grid">
+      <div class="src"><img src="{% static 'portail/img/sante/population.svg' %}" alt="" width="120" height="96"><div><b>Population</b><p>Recensement 2023 (RGPH-5), par quartier : 388 954 habitants.</p></div></div>
+      <div class="src"><img src="{% static 'portail/img/sante/infirmiere.svg' %}" alt="" width="120" height="96"><div><b>Postes de santé</b><p>Personnel, services, équipements et position GPS des {{ stats.postes }} postes publics.</p></div></div>
+      <div class="src"><img src="{% static 'portail/img/sante/enquete.svg' %}" alt="" width="120" height="96"><div><b>Enquête</b><p>{{ stats.patients }} patients interrogés dans {{ stats.postes }} postes de santé.</p></div></div>
+      <div class="src"><img src="{% static 'portail/img/sante/reperes.svg' %}" alt="" width="120" height="96"><div><b>Repères</b><p>1 poste pour 10 000 habitants, 1 médecin pour 10 000 et 1 infirmier pour 5 000 (OMS, repris par l'ANSD, 2022).</p></div></div>
+    </div>
   </section>
 
   <footer class="home-foot">
     <div class="foot-inner">
-      <span>✚ Géoportail santé · Thiès</span>
+      <span>✚ Géoportail du Maillage Sanitaire · Thiès</span>
       <span><a href="{% url 'geoportail' %}">Géoportail</a> · <a href="{% url 'cartotheque' %}">Cartothèque</a> · <a href="{% url 'statistiques' %}">Statistiques</a> · <a href="{% url 'dashboard' %}">Tableau de bord</a> · <a href="{% url 'admin:index' %}">Administration</a></span>
     </div>
   </footer>
@@ -123,5 +129,5 @@
 {% endblock %}
 
 {% block scripts %}
-<script src="{% static 'portail/js/accueil.js' %}"></script>
+<script src="{% static 'portail/js/accueil.js' %}?v={{ VERSION }}"></script>
 {% endblock %}

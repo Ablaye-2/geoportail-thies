@@ -1,0 +1,30 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 240 130" role="img" aria-label="Aire réelle : patients qui se rendent au poste">
+  <rect width="240" height="130" rx="16" fill="#fff4dc"/>
+  <path d="M14 112 C60 100 90 112 130 100 S200 84 228 90" fill="none" stroke="#f59e0b" stroke-width="5" stroke-dasharray="2 10" stroke-linecap="round"/>
+  <!-- poste -->
+  <g transform="translate(176 26)">
+    <rect y="22" width="50" height="40" rx="4" fill="#fff" stroke="#92400e" stroke-width="2.5"/>
+    <path d="M-6 24 L25 6 L56 24" fill="none" stroke="#92400e" stroke-width="4" stroke-linecap="round" stroke-linejoin="round"/>
+    <path d="M25 30 v16 M17 38 h16" stroke="#ef4444" stroke-width="5" stroke-linecap="round"/>
+    <rect x="18" y="48" width="14" height="14" fill="#f59e0b"/>
+  </g>
+  <!-- mere et enfant -->
+  <g transform="translate(62 38)">
+    <circle cx="0" cy="8" r="9" fill="#8d5524"/>
+    <path d="M-9 4 q9 -12 18 0" fill="#f97316"/>
+    <path d="M-12 22 q12 -6 24 0 l4 40 h-32z" fill="#f97316"/>
+    <path d="M-12 28 l-8 20" stroke="#8d5524" stroke-width="5" stroke-linecap="round"/>
+    <path d="M10 30 q14 4 14 16" stroke="#8d5524" stroke-width="5" stroke-linecap="round" fill="none"/>
+    <circle cx="30" cy="40" r="6.5" fill="#a0682d"/>
+    <path d="M23 48 q7 -4 14 0 l2 22 h-18z" fill="#fbbf24"/>
+    <path d="M-6 62 v14 M6 62 v14 M26 70 v8 M34 70 v8" stroke="#8d5524" stroke-width="5" stroke-linecap="round"/>
+  </g>
+  <!-- patient avec canne -->
+  <g transform="translate(126 44)">
+    <circle cx="0" cy="6" r="8" fill="#6b3f1d"/>
+    <path d="M-9 18 q9 -5 18 0 l2 30 h-22z" fill="#0ea5e9"/>
+    <path d="M-5 48 v18 M5 48 v18" stroke="#6b3f1d" stroke-width="5" stroke-linecap="round"/>
+    <path d="M9 24 l10 14" stroke="#6b3f1d" stroke-width="4.5" stroke-linecap="round"/>
+    <path d="M19 36 v32" stroke="#92400e" stroke-width="3.5" stroke-linecap="round"/>
+  </g>
+</svg>

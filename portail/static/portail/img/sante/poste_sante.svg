@@ -1,0 +1,38 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 320 220" role="img" aria-label="Poste de santé">
+  <defs>
+    <linearGradient id="ciel" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#d9f3ef"/><stop offset="1" stop-color="#f2fbf9"/></linearGradient>
+    <linearGradient id="mur" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#ffffff"/><stop offset="1" stop-color="#e7eef2"/></linearGradient>
+  </defs>
+  <rect width="320" height="220" rx="22" fill="url(#ciel)"/>
+  <circle cx="262" cy="46" r="20" fill="#fde68a"/>
+  <path d="M0 176 C60 160 120 170 170 164 S270 150 320 160 V220 H0Z" fill="#bfe8df"/>
+  <!-- arbre -->
+  <rect x="42" y="118" width="8" height="52" rx="3" fill="#8b5a2b"/>
+  <circle cx="46" cy="106" r="26" fill="#22a06b"/><circle cx="30" cy="118" r="16" fill="#2fbf80"/><circle cx="62" cy="120" r="15" fill="#1e8f5e"/>
+  <!-- batiment -->
+  <rect x="86" y="96" width="168" height="80" rx="6" fill="url(#mur)" stroke="#0b4f5c" stroke-width="2.5"/>
+  <rect x="86" y="96" width="168" height="16" fill="#14b8a6"/>
+  <path d="M78 98 L170 62 L262 98" fill="none" stroke="#0b4f5c" stroke-width="5" stroke-linecap="round" stroke-linejoin="round"/>
+  <!-- enseigne croix -->
+  <rect x="148" y="66" width="44" height="34" rx="8" fill="#fff" stroke="#0b4f5c" stroke-width="2.5"/>
+  <path d="M170 72 v22 M159 83 h22" stroke="#ef4444" stroke-width="7" stroke-linecap="round"/>
+  <!-- fenetres et porte -->
+  <rect x="100" y="122" width="34" height="26" rx="4" fill="#bae6fd" stroke="#0b4f5c" stroke-width="2"/>
+  <path d="M117 122 v26 M100 135 h34" stroke="#0b4f5c" stroke-width="1.5"/>
+  <rect x="206" y="122" width="34" height="26" rx="4" fill="#bae6fd" stroke="#0b4f5c" stroke-width="2"/>
+  <path d="M223 122 v26 M206 135 h34" stroke="#0b4f5c" stroke-width="1.5"/>
+  <rect x="152" y="128" width="36" height="48" rx="4" fill="#0f766e" stroke="#0b4f5c" stroke-width="2"/>
+  <circle cx="181" cy="153" r="2.5" fill="#fde68a"/>
+  <!-- epingle de carte -->
+  <g transform="translate(270 112)">
+    <path d="M0 50 C-15 30 -24 20 -24 6 a24 24 0 1 1 48 0 C24 20 15 30 0 50Z" fill="#ef4444" stroke="#fff" stroke-width="3"/>
+    <path d="M0 -6 v24 M-12 6 h24" stroke="#fff" stroke-width="6" stroke-linecap="round"/>
+  </g>
+  <!-- stethoscope -->
+  <g fill="none" stroke="#0b4f5c" stroke-width="4" stroke-linecap="round">
+    <path d="M24 188 c0 -14 10 -18 10 -30"/><path d="M48 188 c0 -14 -10 -18 -10 -30"/>
+    <path d="M36 196 c0 12 10 16 22 14 s18 -10 18 -22"/>
+  </g>
+  <circle cx="24" cy="190" r="3" fill="#0b4f5c"/><circle cx="48" cy="190" r="3" fill="#0b4f5c"/>
+  <circle cx="76" cy="186" r="9" fill="#cbd5e1" stroke="#0b4f5c" stroke-width="3"/>
+</svg>

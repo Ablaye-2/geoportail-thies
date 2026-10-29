@@ -75,20 +75,24 @@
     hab_par_infirmier: { label: "Habitants par infirmier", prop: "hab_par_infirmier" },
   };
   const COULEURS_P = {
-    commune: "Commune", taux: "Taux de couverture (norme 7 714 hab.)", kmeans: "Typologie de l'offre (K-means)",
-    ch: "Classification hiérarchique (CH)", norme_infirmier: "Norme OMS : infirmiers", norme_medecin: "Norme OMS : médecins",
-    nb_services: "Nombre de services offerts",
+    commune: "Commune", taux: "Taux de couverture (repère 10 000 hab.)", kmeans: "Typologie de l'offre (K-means)",
+    ch: "Classification hiérarchique (CAH)", norme_infirmier: "Repère : 1 infirmier / 5 000 hab.", norme_medecin: "Repère : 1 médecin / 10 000 hab.",
+    nb_services: "Nombre de services offerts", infirmiers: "Déficit / surplus en infirmiers (tableau 3-6)",
   };
-  /* typologie du memoire (tableaux 12, 13 et 15) */
+  /* typologie du memoire v3 (figure 3-7, tableaux 3-10 et 3-11) */
   const MAILLE = [
     { cle: "Fortement sous-dotée", txt: "Fortement sous-dotée (taux > 2)", c: "#dc2626" },
     { cle: "Sous-dotée", txt: "Sous-dotée (1 < taux ≤ 2)", c: "#f59e0b" },
-    { cle: "Conforme ou sur-dotée", txt: "Conforme ou sur-dotée (taux ≤ 1)", c: "#16a34a" },
+    { cle: "Conforme", txt: "Conforme (taux ≤ 1)", c: "#16a34a" },
   ];
-  const KMEANS = { K1: ["Plateau technique intermédiaire", "#f97316"], K2: ["Orientation maternité", "#ec4899"],
-                   K3: ["Postes de base", "#38bdf8"], K4: ["Poste de référence", "#facc15"] };
-  const CHC = { CH1: ["Pédiatrie et urgences", "#22c55e"], CH2: ["Plateau technique", "#f97316"],
-                CH3: ["Ni pédiatrie ni urgences", "#a78bfa"], CH4: ["Poste de référence", "#facc15"] };
+  const KMEANS = { K1: ["Postes de base", "#38bdf8"], K2: ["Plateau technique et pédiatrie", "#f97316"], K3: ["Poste de référence", "#facc15"] };
+  const CHC = { CAH1: ["Pédiatrie et urgences", "#22c55e"], CAH2: ["Plateau technique", "#f97316"],
+                CAH3: ["Ni pédiatrie ni urgences", "#a78bfa"], CAH4: ["Poste de référence", "#facc15"] };
+  /* tableau 3-6 du memoire : classes de deficit et de surplus en infirmiers (1 infirmier pour 5 000 habitants) */
+  const INF = { "Déficit fort": ["#991b1b", "rangs 1 à 7"], "Déficit moyen": ["#f97316", "rangs 8 à 13"], "Déficit faible": ["#fa8072", "rangs 14 à 18"],
+                "Surplus faible": ["#86efac", "rangs 19 à 22"], "Surplus moyen": ["#22c55e", "rangs 23 à 26"], "Surplus fort": ["#166534", "rangs 27 et 28"] };
+  /* modes de couleur qui s'appliquent aussi aux mailles (aires de desserte) */
+  const COULEUR_MAILLE = ["taux", "kmeans", "ch", "infirmiers", "norme_infirmier", "norme_medecin"];
   const couleurMaille = function (t) { const m = MAILLE.filter(function (x) { return x.cle === t; })[0]; return m ? m.c : "#64748b"; };
   const nomCourt = function (p) { return p.nom_usuel || String(p.nom || "").replace(/^PS /, ""); };
   let indQ = "population", tailleP = "uniforme", couleurP = "commune";
@@ -150,6 +154,7 @@
     if (couleurP === "taux") return couleurMaille(p.type_maille);
     if (couleurP === "kmeans") return (KMEANS[p.classe_kmeans] || [0, "#64748b"])[1];
     if (couleurP === "ch") return (CHC[p.classe_ch] || [0, "#64748b"])[1];
+    if (couleurP === "infirmiers") return (INF[p.classe_infirmier] || ["#64748b"])[0];
     if (couleurP === "norme_infirmier") return p.norme_infirmier_respectee ? "#16a34a" : "#dc2626";
     if (couleurP === "norme_medecin") return p.norme_medecin_respectee ? "#16a34a" : "#dc2626";
     const c = S.pclass.services;
@@ -242,6 +247,19 @@
   ];
   const LIB_AIRE = { aire_administrative: "Aire administrative", aire_reelle: "Aire réelle", aire_theorique: "Aire théorique" };
 
+  /* une maille prend la couleur de son poste (classe) quand le mode de couleur des postes s'y prete, sinon une couleur par poste */
+  function posteParId(pid) { return S.postes ? (S.postes.features.filter(function (x) { return x.properties.id === pid; })[0] || {}).properties : null; }
+  function styleAire(id, f) {
+    const p = COULEUR_MAILLE.indexOf(couleurP) >= 0 ? posteParId(f.properties.id) : null;
+    if (id === "thiessen") return p ? { pane: id, color: "#ffffff", weight: 1, fillColor: couleurPoste(p), fillOpacity: 0.62 }
+                                    : { pane: id, color: "#b91c1c", weight: 1.6, dashArray: "5 4", fillColor: GP.couleurId(f.properties.id), fillOpacity: 0.18 };
+    if (p) return { pane: id, color: "#ffffff", weight: 1.2, fillColor: couleurPoste(p), fillOpacity: 0.62 };
+    const c = GP.couleurId(f.properties.id); return { pane: id, color: c, weight: 2, fillColor: c, fillOpacity: 0.35 };
+  }
+  function restylerAires() {
+    ["aire_administrative", "aire_reelle", "aire_theorique", "thiessen"].forEach(function (k) {
+      if (S.layers[k]) S.layers[k].setStyle(function (f) { return styleAire(k, f); }); });
+  }
   function buildDistante(id, data) {
     if (S.layers[id]) map.removeLayer(S.layers[id]);
     let opts;
@@ -258,7 +276,7 @@
     } else if (id === "thiessen") {
       opts = {
         pane: "thiessen",
-        style: function (f) { return { pane: "thiessen", color: "#b91c1c", weight: 1.6, dashArray: "5 4", fillColor: GP.couleurId(f.properties.id), fillOpacity: 0.18 }; },
+        style: function (f) { return styleAire("thiessen", f); },
         onEachFeature: function (f, l) {
           const p = f.properties;
           l.bindTooltip("<b>Thiessen · " + esc(p.poste) + "</b><br>" + fmt(p.superficie_ha / 100, 2) + " km²" +
@@ -270,7 +288,7 @@
     } else {
       opts = {
         pane: id,
-        style: function (f) { const c = GP.couleurId(f.properties.id); return { pane: id, color: c, weight: 2, fillColor: c, fillOpacity: 0.35 }; },
+        style: function (f) { return styleAire(id, f); },
         onEachFeature: function (f, l) {
           const p = f.properties;
           l.bindTooltip("<b>" + esc(LIB_AIRE[id]) + " · " + esc(p.poste) + "</b><br>" + p.nb_quartiers + " quartier(s) · " + fmt(p.population) + " hab.", { sticky: true });
@@ -334,6 +352,7 @@
       const ic = GP.iconeLegende;
       if (couleurP === "commune") Object.keys(GP.COMMUNE_COULEUR).forEach(function (k) { h += '<div class="it">' + ic(GP.COMMUNE_COULEUR[k]) + esc(k) + "</div>"; });
       else if (couleurP === "taux") MAILLE.forEach(function (m) { h += '<div class="it">' + ic(m.c) + esc(m.txt) + "</div>"; });
+      else if (couleurP === "infirmiers") Object.keys(INF).forEach(function (k) { h += '<div class="it">' + ic(INF[k][0]) + esc(k) + ' <small style="color:#9fb6c9">(' + INF[k][1] + ")</small></div>"; });
       else if (couleurP === "kmeans" || couleurP === "ch") { const T = couleurP === "kmeans" ? KMEANS : CHC; Object.keys(T).forEach(function (k) { h += '<div class="it">' + ic(T[k][1]) + k + " · " + esc(T[k][0]) + "</div>"; }); }
       else if (couleurP === "nb_services") S.pclass.services.colors.forEach(function (col, i) {
         const b = S.pclass.services.breaks;
@@ -345,7 +364,7 @@
       if ($("#postes-labels").checked) h += '<div class="it" style="color:#9fb6c9">Étiquette : n° des cartes du mémoire + nom</div>';
     }
     const aires = ["aire_administrative", "aire_reelle", "aire_theorique", "thiessen"].filter(function (k) { return S.on[k]; });
-    if (aires.length) { if (h) h += '<div class="sep"></div>'; h += "<h4>Aires de desserte</h4><div style=\"color:#9fb6c9\">Une couleur par poste de santé (cliquer pour la fiche).</div>"; }
+    if (aires.length) { if (h) h += '<div class="sep"></div>'; h += "<h4>Aires de desserte</h4><div style=\"color:#9fb6c9\">" + (COULEUR_MAILLE.indexOf(couleurP) >= 0 ? "Chaque maille prend la couleur de son poste : " + esc(COULEURS_P[couleurP]) + "." : "Une couleur par poste de santé (cliquer pour la fiche).") + "</div>"; }
     if (S.on.flux) { if (h) h += '<div class="sep"></div>'; h += '<h4>Flux de patients (≥ 5 % des patients du poste)</h4><div class="it"><span class="sw" style="background:#c084fc"></span>Épaisseur = nb de patients</div><div class="it" style="color:#9fb6c9">Tirets : quartier rattaché à un autre poste dominant</div>'; }
     $("#legend-box").innerHTML = h || '<span class="hint">Aucune couche affichée.</span>';
   }
@@ -357,6 +376,7 @@
     $("#detail").classList.remove("hidden");
     $("#rcol").scrollTop = 0;
     document.body.classList.add("right-open");
+    if (document.body.classList.contains("hide-right")) { document.body.classList.remove("hide-right", "map-maxi"); if (window.gpMajTog) window.gpMajTog(); }
   }
   function fermerDetail() {
     $("#detail").classList.add("hidden");
@@ -389,18 +409,20 @@
       '<div class="box"><b>' + fmt(p.personnel_total) + "</b><span>agents de santé</span></div>" +
       '<div class="box"><b>' + fmt(p.nb_lits) + "</b><span>lits</span></div>" +
       '<div class="box"><b>' + fmt(p.nb_services) + "/11</b><span>services offerts</span></div></div></div>";
-    h += '<div class="d-sec"><h4>Personnel et normes OMS</h4><table><tr><th></th><th class="num">Eff.</th><th class="num">Hab./agent</th><th>Norme</th><th class="num">Manque</th></tr>' +
+    h += '<div class="d-sec"><h4>Personnel et repères (OMS, ANSD)</h4><table><tr><th></th><th class="num">Eff.</th><th class="num">Hab./agent</th><th>Norme</th><th class="num">Manque</th></tr>' +
       "<tr><td>Médecins</td><td class=num>" + fmt(p.nb_medecins) + "</td><td class=num>" + hab(p.hab_par_medecin) + "</td><td>" + badge(p.norme_medecin_respectee, p.norme_medecin_respectee ? "OK" : "Non") + "</td><td class=num>" + fmt(p.medecins_manquants) + "</td></tr>" +
       "<tr><td>Infirmiers</td><td class=num>" + fmt(p.nb_infirmiers) + "</td><td class=num>" + hab(p.hab_par_infirmier) + "</td><td>" + badge(p.norme_infirmier_respectee, p.norme_infirmier_respectee ? "OK" : "Non") + "</td><td class=num>" + fmt(p.infirmiers_manquants) + "</td></tr>" +
       "<tr><td>Sages-femmes</td><td class=num>" + fmt(p.nb_sages_femmes) + "</td><td class=num>—</td><td>—</td><td class=num>—</td></tr>" +
       "<tr><td>Techniciens sup.</td><td class=num>" + fmt(p.nb_techniciens_sup) + "</td><td class=num>" + (p.nb_techniciens_sup ? fmt(p.population / p.nb_techniciens_sup) : "aucun") + "</td><td>" +
         badge(p.techniciens_manquants === 0, p.techniciens_manquants === 0 ? "OK" : "Non") + "</td><td class=num>" + fmt(p.techniciens_manquants) + "</td></tr></table>" +
-      '<p class="hint">Normes : 1 médecin / 10 000 hab., 1 infirmier / 5 000 hab., 1 technicien supérieur / 5 000 hab. (hypothèse du mémoire). Population administrative.</p></div>';
+      (p.classe_infirmier ? '<p class="hint"><span class="badge" style="background:' + (INF[p.classe_infirmier] || ["#64748b"])[0] + ';color:#fff">' + esc(p.classe_infirmier) + "</span> · rang " + p.rang_infirmier + " sur 28 · " +
+        fmt(p.infirmiers_requis) + " infirmier(s) requis, écart " + (p.ecart_infirmiers > 0 ? "+" : "") + fmt(p.ecart_infirmiers) + " (tableau 3-6)</p>" : "") +
+      '<p class="hint">Repères : 1 médecin / 10 000 hab., 1 infirmier / 5 000 hab., 1 technicien supérieur / 5 000 hab. (hypothèse du mémoire). Population administrative.</p></div>';
     if (p.taux_couverture != null) {
       const ix = function (v) { return v === null || v === undefined ? "—" : Number(v).toLocaleString("fr-FR", { minimumFractionDigits: 2, maximumFractionDigits: 2 }); };
-      h += '<div class="d-sec"><h4>Couverture et forme des mailles <small>(mémoire, tableau 17)</small></h4>' +
+      h += '<div class="d-sec"><h4>Couverture et forme des mailles <small>(mémoire, annexe A-1)</small></h4>' +
         '<div class="kv"><div class="box"><b>' + fmt(p.population_theorique) + "</b><span>hab. dans l'aire théorique</span></div>" +
-        '<div class="box"><b style="color:' + couleurMaille(p.type_maille) + '">' + fmt(p.taux_couverture, 2) + "</b><span>taux de couverture (norme 7 714)</span></div></div>" +
+        '<div class="box"><b style="color:' + couleurMaille(p.type_maille) + '">' + fmt(p.taux_couverture, 2) + "</b><span>taux de couverture (repère 10 000)</span></div></div>" +
         '<p class="hint"><span class="badge" style="background:' + couleurMaille(p.type_maille) + ';color:#fff">' + esc(p.type_maille) + "</span> · aire théorique de " + fmt(p.superficie_theo_km2, 2) + " km²</p>" +
         "<table><tr><th>Indice</th><th class=num>Valeur</th></tr>" +
         "<tr><td>Forme IF (cercle = 0,785)</td><td class=num>" + ix(p.indice_forme) + "</td></tr>" +
@@ -410,7 +432,7 @@
         "<tr><td>Discordance théorique / réelle</td><td class=num>" + ix(p.discordance_tr) + "</td></tr></table>" +
         '<p class="hint">Discordance : 0 = aires identiques, 1 = aucun recouvrement.</p>' +
         "<h4 style=\"margin-top:12px\">Typologie de l'offre</h4><p class=hint><b>" + esc(p.classe_kmeans || "—") + " (K-means) :</b> " + esc(p.profil_kmeans || "—") +
-        "<br><b>" + esc(p.classe_ch || "—") + " (CH) :</b> " + esc(p.profil_ch || "—") + "</p></div>";
+        "<br><b>" + esc(p.classe_ch || "—") + " (CAH) :</b> " + esc(p.profil_ch || "—") + "</p></div>";
     }
     h += '<div class="d-sec"><h4>Services disponibles</h4><div class="chips">' +
       ((p.services || []).length ? p.services.map(function (s) { return '<span class="chip">' + esc(s) + "</span>"; }).join("") : '<span class="chip muted">Aucun service renseigné</span>') +
@@ -423,10 +445,9 @@
     h += "</div>";
     h += '<div class="d-sec"><h4>Enquête auprès des patients (n = ' + n + ")</h4>";
     if (n) {
-      h += '<div class="kv"><div class="box"><b>' + fmt(e.indicateurs.age_moyen, 1) + "</b><span>âge moyen (ans)</span></div>" +
-        '<div class="box"><b>' + fmt(e.indicateurs.duree_mediane_min, 0) + "</b><span>trajet médian (min)</span></div>" +
+      h += '<div class="kv"><div class="box"><b>' + fmt(e.indicateurs.duree_mediane_min, 0) + "</b><span>trajet médian (min)</span></div>" +
         '<div class="box"><b>' + fmt(e.indicateurs.distance_mediane_km, 2) + "</b><span>distance médiane (km)</span></div>" +
-        '<div class="box"><b>' + fmt(e.sexe.filter(function (s) { return s.label === "Femme"; }).map(function (s) { return 100 * s.n / n; })[0], 0) + " %</b><span>de femmes</span></div></div>" +
+        '<div class="box"><b>' + fmt(e.indicateurs.pct_a_pied, 0) + " %</b><span>viennent à pied</span></div></div>" +
         '<h4 style="margin-top:14px">Moyen de transport</h4><canvas id="ch-transport"></canvas>' +
         '<h4 style="margin-top:14px">Raisons du choix</h4><canvas id="ch-raisons"></canvas>' +
         '<h4 style="margin-top:14px">Quartiers de résidence des patients</h4><canvas id="ch-prov"></canvas>';
@@ -1074,7 +1095,7 @@
 
     $("#ind-quartier").addEventListener("change", function (e) { indQ = e.target.value; recalcClassesQ(); S.layers.quartiers.setStyle(styleQ); renderLegend(); });
     $("#postes-taille").addEventListener("change", function (e) { tailleP = e.target.value; recalcClassesP(); buildPostes(); renderLegend(); });
-    $("#postes-couleur").addEventListener("change", function (e) { couleurP = e.target.value; buildPostes(); renderLegend(); });
+    $("#postes-couleur").addEventListener("change", function (e) { couleurP = e.target.value; buildPostes(); restylerAires(); renderLegend(); });
     $("#postes-labels").addEventListener("change", function () { buildPostes(); renderLegend(); });
     $("#filtre-commune").addEventListener("change", function (e) {
       S.commune = e.target.value; buildQuartiers(); buildPostes(); buildLabelsCommunes();
@@ -1082,6 +1103,29 @@
     });
 
     $("#btn-panel").addEventListener("click", function () { document.body.classList.toggle("panel-open"); });
+    /* agrandir la carte : panneaux lateraux masquables, choix memorise */
+    const B = document.body;
+    function majTog() {
+      const l = B.classList.contains("hide-left"), r = B.classList.contains("hide-right"), m = l && r;
+      B.classList.toggle("map-maxi", m && B.classList.contains("map-maxi"));
+      const tl = $("#tog-left"), tr = $("#tog-right"), tm = $("#tog-max");
+      tl.textContent = l ? "›" : "‹"; tl.title = l ? "Afficher le panneau de gauche" : "Masquer le panneau de gauche"; tl.setAttribute("aria-label", tl.title); tl.setAttribute("aria-pressed", l ? "true" : "false");
+      tr.textContent = r ? "‹" : "›"; tr.title = r ? "Afficher le panneau de droite" : "Masquer le panneau de droite"; tr.setAttribute("aria-label", tr.title); tr.setAttribute("aria-pressed", r ? "true" : "false");
+      const maxi = B.classList.contains("map-maxi");
+      $(".ico", tm).textContent = maxi ? "⤡" : "⤢"; $(".txt", tm).textContent = maxi ? "Réduire la carte" : "Agrandir la carte"; tm.setAttribute("aria-pressed", maxi ? "true" : "false");
+      try { localStorage.setItem("gp-carte-vue", JSON.stringify({ l: l, r: r, m: maxi })); } catch (e) {}
+      setTimeout(function () { map.invalidateSize(); requestAnimationFrame(majEtiquettes); }, 60);
+    }
+    $("#tog-left").addEventListener("click", function () { B.classList.toggle("hide-left"); B.classList.remove("map-maxi"); majTog(); });
+    $("#tog-right").addEventListener("click", function () { B.classList.toggle("hide-right"); B.classList.remove("map-maxi"); majTog(); });
+    $("#tog-max").addEventListener("click", function () {
+      const on = !B.classList.contains("map-maxi");
+      B.classList.toggle("map-maxi", on); B.classList.toggle("hide-left", on); B.classList.toggle("hide-right", on); majTog();
+    });
+    try { const v = JSON.parse(localStorage.getItem("gp-carte-vue") || "{}");
+      B.classList.toggle("hide-left", !!v.l); B.classList.toggle("hide-right", !!v.r); B.classList.toggle("map-maxi", !!v.m); } catch (e) {}
+    window.gpMajTog = majTog;
+    majTog();
     $("#detail-close").addEventListener("click", fermerDetail);
 
     $("#tool-proche").addEventListener("click", function () { if (S.tool === "mesure") effacerMesure(); setTool("proche"); });

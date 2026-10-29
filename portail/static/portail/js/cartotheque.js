@@ -52,9 +52,9 @@
     if ($("#lightbox").classList.contains("hidden")) return;
     if (e.key === "Escape") fermer(); else if (e.key === "ArrowLeft") decaler(-1); else if (e.key === "ArrowRight") decaler(1);
   });
-  // lien direct vers une carte : /cartotheque/#figure-10
+  // lien direct vers une carte : /cartotheque/#figure-3-7
   function depuisAdresse() {
-    const m = /^#figure-(\d+)$/.exec(window.location.hash);
+    const m = /^#figure-([0-9A-Za-z-]+)$/.exec(window.location.hash);
     if (m) { const c = cartes.filter(function (x) { return x.dataset.figure === m[1]; })[0]; if (c) ouvrir(c); }
   }
   window.addEventListener("hashchange", depuisAdresse);

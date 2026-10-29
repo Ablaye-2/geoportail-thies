@@ -1,6 +1,6 @@
 {% extends "portail/base.html" %}
 {% load static %}
-{% block title %}Cartothèque · Géoportail santé Thiès{% endblock %}
+{% block title %}Cartothèque · Géoportail du Maillage Sanitaire{% endblock %}
 
 {% block content %}
 <main class="ctq">
@@ -82,5 +82,5 @@
 {% endblock %}
 
 {% block scripts %}
-<script src="{% static 'portail/js/cartotheque.js' %}"></script>
+<script src="{% static 'portail/js/cartotheque.js' %}?v={{ VERSION }}"></script>
 {% endblock %}

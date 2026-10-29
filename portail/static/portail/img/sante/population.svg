@@ -1,0 +1,6 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 120 96" role="img" aria-label="Population">
+  <rect width="120" height="96" rx="16" fill="#e0f2fe"/>
+  <g transform="translate(30 30)"><circle r="11" fill="#8d5524"/><path d="M-18 46 q0 -26 18 -26 q18 0 18 26z" fill="#0ea5e9"/></g>
+  <g transform="translate(90 30)"><circle r="11" fill="#6b3f1d"/><path d="M-18 46 q0 -26 18 -26 q18 0 18 26z" fill="#14b8a6"/></g>
+  <g transform="translate(60 40)"><circle r="13" fill="#a0682d"/><path d="M-20 50 q0 -28 20 -28 q20 0 20 28z" fill="#f97316"/></g>
+</svg>

@@ -364,6 +364,8 @@ body.page-statistiques .stat-ref td b { color: #fff; }
 .stx-leg span { display: flex; align-items: center; gap: 7px; }
 .stx-leg i { width: 14px; height: 12px; border-radius: 3px; display: inline-block; opacity: .85; }
 .stx-leg i.site { background: #facc15; border-radius: 50%; width: 14px; height: 14px; }
+.stx-leg i.poste { background: #0f766e; border: 1.5px solid #fff; border-radius: 50%; width: 10px; height: 10px; margin: 0 2px; opacity: 1; }
+.stx-leg b { font-size: 11.5px; margin-bottom: 2px; }
 .site-pin { width: 26px; height: 26px; border-radius: 50%; background: #facc15; color: #1c1917; font-weight: 900; display: grid; place-items: center; border: 2px solid #fff; box-shadow: 0 0 0 4px rgba(250, 204, 21, .35), 0 3px 8px rgba(0, 0, 0, .5); }
 .hypos { display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 12px; }
 .hypo { background: linear-gradient(180deg, rgba(15, 45, 70, .94), rgba(9, 31, 50, .96)); border: 1px solid var(--line); border-radius: 14px; padding: 14px 16px; }
@@ -372,7 +374,7 @@ body.page-statistiques .stat-ref td b { color: #fff; }
 .hypo header b { color: #86efac; font-size: 12.5px; background: rgba(34, 197, 94, .18); padding: 2px 9px; border-radius: 999px; }
 .hypo h3 { color: #fff; font-size: 15px; margin: 10px 0 6px; line-height: 1.35; }
 .hypo p { color: #cfe3ee; font-size: 13px; line-height: 1.55; margin: 0; }
-body.page-accueil .cards { grid-template-columns: minmax(0, 620px); }
+body.page-accueil .cards { grid-template-columns: minmax(0, 860px); }
 #t-sites { width: 100%; border-collapse: collapse; font-size: 13px; }
 #t-sites th { text-align: left; color: var(--mut); font-weight: 600; padding: 6px 8px; border-bottom: 1px solid var(--line); }
 #t-sites td { padding: 6px 8px; border-bottom: 1px solid rgba(255, 255, 255, .06); color: #dbe9f3; }
@@ -396,6 +398,9 @@ body.page-dashboard #t-qualite td:nth-child(4) { white-space: nowrap; }
 /* accueil : photo d'un poste de sante en arriere-plan (portail/static/portail/img/accueil_poste_sante.jpg) */
 body.page-accueil .hero-bg.hero-photo { background-size: cover; background-position: 62% center; background-repeat: no-repeat; }
 body.page-accueil .hero-bg.hero-photo svg { display: none; }
+body.page-accueil .hero-video { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; object-position: 60% center; pointer-events: none; }
+body.page-accueil .hero-bg.hero-photo::after { z-index: 1; }
+@media (prefers-reduced-motion: reduce) { body.page-accueil .hero-video { display: none; } }
 body.page-accueil .hero-bg.hero-photo::after {
   background: linear-gradient(90deg, rgba(3, 20, 32, .92) 0%, rgba(3, 20, 32, .78) 34%, rgba(3, 20, 32, .30) 62%, rgba(3, 20, 32, .08) 100%),
               linear-gradient(0deg, rgba(3, 20, 32, .85) 0%, rgba(3, 20, 32, 0) 38%); }
@@ -403,4 +408,27 @@ body.page-accueil .hero-photo + .hero-inner h1, body.page-accueil .hero-photo ~ 
 @media (max-width: 900px) {
   body.page-accueil .hero-bg.hero-photo { background-position: 70% center; }
   body.page-accueil .hero-bg.hero-photo::after { background: linear-gradient(180deg, rgba(3, 20, 32, .62) 0%, rgba(3, 20, 32, .88) 100%); }
+}
+
+/* tableau de bord : legende des classes du tableau 3-6 */
+.inf-leg { display: flex; flex-wrap: wrap; gap: 6px; align-items: center; margin: 10px 0 4px; font-size: 12px; }
+.inf-leg span { padding: 3px 9px; border-radius: 999px; font-weight: 600; }
+.inf-leg a { margin-left: 6px; color: var(--teal2); }
+
+/* page d'accueil : illustrations sante */
+body.page-accueil .fcard.illu { display: grid; grid-template-columns: minmax(0, 300px) 1fr; gap: 24px; align-items: center; padding: 18px; }
+body.page-accueil .fcard.illu .fcard-img { width: 100%; height: auto; border-radius: 16px; display: block; }
+body.page-accueil .aire { display: flex; flex-direction: column; }
+body.page-accueil .aire .aire-img { width: 100%; height: auto; border-radius: 12px; margin-bottom: 12px; display: block; }
+body.page-accueil .sources-grid { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 14px; margin-top: 14px; }
+body.page-accueil .src { display: flex; flex-direction: column; gap: 10px; padding: 14px; border-radius: 16px; border: 1px solid var(--line);
+  background: linear-gradient(180deg, rgba(15, 45, 70, .94), rgba(9, 31, 50, .96)); }
+body.page-accueil .src img { width: 100%; max-width: 160px; height: auto; border-radius: 12px; }
+body.page-accueil .src b { color: #fff; font-size: 15px; }
+body.page-accueil .src p { margin: 4px 0 0; color: var(--mut); font-size: 13.5px; line-height: 1.45; }
+@media (max-width: 900px) { body.page-accueil .sources-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
+@media (max-width: 640px) {
+  body.page-accueil .fcard.illu { grid-template-columns: 1fr; }
+  body.page-accueil .sources-grid { grid-template-columns: 1fr; }
+  body.page-accueil .src { flex-direction: row; align-items: center; } body.page-accueil .src img { width: 96px; flex: 0 0 96px; }
 }

@@ -25,5 +25,7 @@ def site(request):
         "CREDITS": getattr(settings, "GEOPORTAIL_CREDITS", ""),
         "PROFIL": getattr(settings, "GEOPORTAIL_PROFIL", ("Visiteur", "Géoportail santé")),
         "MAJ": maj,
+        # numero de version ajoute aux CSS / JS (?v=) : le navigateur recharge les fichiers a chaque nouvelle version
+        "VERSION": getattr(settings, "GEOPORTAIL_VERSION", "1"),
         "ROUTAGE_URL": getattr(settings, "GEOPORTAIL_ROUTAGE_URL", "https://routing.openstreetmap.de/routed-{mode}/route/v1/driving/"),
     }

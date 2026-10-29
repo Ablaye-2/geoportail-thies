@@ -4,8 +4,8 @@
   const esc = GP.esc, fmt = GP.fmt;
   const $ = (s, r) => (r || document).querySelector(s);
   const $$ = (s, r) => Array.from((r || document).querySelectorAll(s));
-  const MAILLE = { "Fortement sous-dotée": ["ko", "#ef4444"], "Sous-dotée": ["warn", "#f59e0b"], "Conforme ou sur-dotée": ["ok", "#22c55e"] };
-  const KC = { K1: "#f97316", K2: "#ec4899", K3: "#38bdf8", K4: "#facc15" };
+  const MAILLE = { "Fortement sous-dotée": ["ko", "#ef4444"], "Sous-dotée": ["warn", "#f59e0b"], "Conforme": ["ok", "#22c55e"] };
+  const KC = { K1: "#38bdf8", K2: "#f97316", K3: "#facc15" };
   const dec = function (d) { return function (v) { return v === null || v === undefined ? "–" : Number(v).toLocaleString("fr-FR", { minimumFractionDigits: d, maximumFractionDigits: d }); }; };
   const TABLES = {};   // id -> {colonnes, lignes} pour l'export CSV
 
@@ -69,7 +69,7 @@
 
     const g5 = d.grille.filter(function (g) { return g.distance_max_m === 5000; })[0] || {};
     $("#stx-kpis").innerHTML =
-      kpi(fmt(ville.population), "habitants (RGPH-5, 2023)") + kpi(fmt(ville.hab_par_poste), "hab. par poste (norme : 7 714)", "bad") +
+      kpi(fmt(ville.population), "habitants (RGPH-5, 2023)") + kpi(fmt(ville.hab_par_poste), "hab. par poste (repère : 10 000)", "bad") +
       kpi(fmt(ville.sous_dotes) + " / " + fmt(ville.postes), "postes sous-dotés (taux > 1)", "bad") +
       kpi(fmt(g1.pct_cumule, 1) + " %", "de la superficie à ≤ 1 km d'un poste", "warn") + kpi(fmt(g5.pct_cumule, 1) + " %", "de la superficie à ≤ 5 km d'un poste") +
       kpi(fmt(adm.pct_concordance, 1) + " %", "concordance aire administrative × réelle") +
@@ -79,16 +79,16 @@
     /* 2. couverture */
     d.couverture[d.couverture.length - 1]._total = true;
     tableau("t-couv", [{ k: "commune", t: "Commune" }, { k: "postes", t: "Postes", num: true }, { k: "superficie_km2", t: "Superficie des polygones (km²)", num: true, d: 1 },
-      { k: "population", t: "Population 2023", num: true }, { k: "hab_par_poste", t: "Hab. / poste", num: true }, { k: "ratio_norme", t: "× norme", num: true, d: 1 },
+      { k: "population", t: "Population 2023", num: true }, { k: "hab_par_poste", t: "Hab. / poste", num: true }, { k: "ratio_norme", t: "× repère", num: true, d: 1 },
       { k: "densite", t: "Hab. / km²", num: true },
       { k: "sous_dotes", t: "Postes sous-dotés", num: true, f: function (v, r) { return fmt(v) + " sur " + fmt(r.postes); } }], d.couverture, { triable: false });
     const pt = d.postes.slice().sort(function (a, b) { return b.taux_couverture - a.taux_couverture; });
     GP.graphique($("#c-taux"), { type: "bar",
       data: { labels: pt.map(function (p) { return p.nom; }), datasets: [
         { label: "Taux de couverture", data: pt.map(function (p) { return p.taux_couverture; }), backgroundColor: pt.map(function (p) { return (MAILLE[p.type_maille] || [0, "#64748b"])[1]; }), borderRadius: 3 },
-        { type: "line", label: "Norme (1)", data: pt.map(function () { return 1; }), borderColor: GP.couleur("norme"), borderDash: [6, 4], pointRadius: 0, borderWidth: 2 },
-        { type: "line", label: "2 × la norme", data: pt.map(function () { return 2; }), borderColor: "rgba(239,68,68,.7)", borderDash: [3, 4], pointRadius: 0, borderWidth: 1.5 }] },
-      options: { scales: { x: { ticks: { maxRotation: 70, minRotation: 45, autoSkip: false } }, y: { beginAtZero: true, title: { display: true, text: "population de l'aire / 7 714" } } } } });
+        { type: "line", label: "Repère (1)", data: pt.map(function () { return 1; }), borderColor: GP.couleur("norme"), borderDash: [6, 4], pointRadius: 0, borderWidth: 2 },
+        { type: "line", label: "2 × le repère", data: pt.map(function () { return 2; }), borderColor: "rgba(239,68,68,.7)", borderDash: [3, 4], pointRadius: 0, borderWidth: 1.5 }] },
+      options: { scales: { x: { ticks: { maxRotation: 70, minRotation: 45, autoSkip: false } }, y: { beginAtZero: true, title: { display: true, text: "population de l'aire / 10 000" } } } } });
     $("#l-mailles").innerHTML = d.mailles.map(function (m) {
       return '<div class="maille"><div class="mh"><span class="badge ' + (MAILLE[m.type] || [""])[0] + '">' + esc(m.type) + "</span><b>" + m.n + " postes</b><small>taux " + esc(m.taux) + "</small></div>" +
         "<p>" + m.postes.map(esc).join(", ") + "</p></div>";
@@ -130,8 +130,8 @@
     /* 5. typologie */
     tableau("t-classes", [{ k: "code", t: "Classe" }, { k: "methode", t: "Méthode" }, { k: "n", t: "Postes", num: true }, { k: "profil", t: "Profil" },
       { k: "postes", t: "Composition", f: function (v) { return '<span class="compo">' + esc(v || "–") + "</span>"; } }], d.classes, { triable: false });
-    const CH = ["CH1", "CH2", "CH3", "CH4"], K = ["K1", "K2", "K3", "K4"];
-    $("#t-croise").innerHTML = "<thead><tr><th>K-means \\ CH</th>" + CH.map(function (c) { return '<th class="num">' + c + "</th>"; }).join("") + '<th class="num">Total</th></tr></thead><tbody>' +
+    const CH = ["CAH1", "CAH2", "CAH3", "CAH4"], K = ["K1", "K2", "K3"];
+    $("#t-croise").innerHTML = "<thead><tr><th>K-means \\ CAH</th>" + CH.map(function (c) { return '<th class="num">' + c + "</th>"; }).join("") + '<th class="num">Total</th></tr></thead><tbody>' +
       K.map(function (k) { const l = d.croisement[k] || {}; const s = CH.reduce(function (a, c) { return a + (l[c] || 0); }, 0);
         return "<tr><td><b>" + k + "</b></td>" + CH.map(function (c) { return '<td class="num' + (l[c] ? " fort" : "") + '">' + (l[c] || 0) + "</td>"; }).join("") + '<td class="num">' + s + "</td></tr>"; }).join("") +
       '<tr class="total"><td>Total</td>' + CH.map(function (c) { return '<td class="num">' + K.reduce(function (a, k) { return a + ((d.croisement[k] || {})[c] || 0); }, 0) + "</td>"; }).join("") + '<td class="num">' + d.postes.length + "</td></tr></tbody>";
@@ -150,8 +150,7 @@
       options: { indexAxis: "y", plugins: { legend: { display: false } }, scales: { x: { beginAtZero: true } } } });
     d.besoins[d.besoins.length - 1]._total = true;
     tableau("t-besoins", [{ k: "commune", t: "Commune" }, { k: "postes", t: "Postes actuels", num: true }, { k: "population", t: "Population 2023", num: true },
-      { k: "requis_norme", t: "Requis (7 714)", num: true }, { k: "manque_norme", t: "À créer", num: true, f: function (v) { return "<b>+" + fmt(v) + "</b>"; } },
-      { k: "requis_10000", t: "Requis (10 000)", num: true }, { k: "manque_10000", t: "À créer", num: true, f: function (v) { return "+" + fmt(v); } }], d.besoins, { triable: false });
+      { k: "requis_norme", t: "Requis (10 000)", num: true }, { k: "manque_norme", t: "À créer", num: true, f: function (v) { return "<b>+" + fmt(v) + "</b>"; } }], d.besoins, { triable: false });
     // distances
     const dg = d.distance_grille || {};
     $("#l-dist").innerHTML = tuile(fmt(dg.moyenne_km, 1) + " km", "distance moyenne") + tuile(fmt(dg.mediane_km, 1) + " km", "distance médiane") +
@@ -171,12 +170,8 @@
       tuile(rv.plus_grande.length, "plus grandes") + tuile(rv.identique.length, "identiques") + tuile(fmt(rv.superficie_reelle_km2, 1) + " km²", "couverts par les aires réelles (" + fmt(100 * rv.superficie_reelle_km2 / d.superficie_ville_km2) + " % de la ville)") + "</div>" +
       '<p class="hint"><b>Plus grandes :</b> ' + rv.plus_grande.map(esc).join(", ") + (rv.sans.length ? " · <b>sans aire réelle :</b> " + rv.sans.map(esc).join(", ") : "") +
       ". Thiès Nonè : aire administrative de 25,8 km², alors que son aire réelle se limite aux abords du poste.</p>";
-    // profils K-means
-    tableau("t-profils", [{ k: "classe", t: "Classe" }, { k: "postes", t: "Postes", num: true }, { k: "med", t: "Méd.", num: true, d: 1 }, { k: "inf", t: "Inf.", num: true, f: dec(1) },
-      { k: "sf", t: "S.-f.", num: true, f: dec(1) }, { k: "lits", t: "Lits", num: true, f: dec(1) }, { k: "radio", t: "Radio.", num: true, f: dec(1) },
-      { k: "steril", t: "Stérilis.", num: true, f: dec(1) }, { k: "labo", t: "Labo.", num: true, f: dec(1) }], d.profils_kmeans, { triable: false });
     // maille x K-means
-    const TM = ["Fortement sous-dotée", "Sous-dotée", "Conforme ou sur-dotée"], KK = ["K1", "K2", "K3", "K4"];
+    const TM = ["Fortement sous-dotée", "Sous-dotée", "Conforme"], KK = ["K1", "K2", "K3"];
     const cnt = function (t, k) { return d.maille_classe.filter(function (x) { return x.type_maille === t && x.classe_kmeans === k; }).reduce(function (a, x) { return a + x.n; }, 0); };
     $("#t-maille-k").innerHTML = "<thead><tr><th>Maille \\ K-means</th>" + KK.map(function (k) { return '<th class="num">' + k + "</th>"; }).join("") + '<th class="num">Total</th></tr></thead><tbody>' +
       TM.map(function (t) { const v = KK.map(function (k) { return cnt(t, k); });
@@ -186,52 +181,44 @@
       { k: "dist_km", t: "Poste le plus proche", num: true, f: function (v) { return dec(1)(v) + " km"; } }], d.sites, { triable: false });
     carteSites(d.sites);
 
-    /* 6. tableau 17 */
+    /* 8. annexe A-1 */
     const filtrer = tableau("t-17", [{ k: "numero", t: "N°", num: true }, { k: "nom", t: "Poste" }, { k: "commune", t: "Commune" },
       { k: "superficie_theo_km2", t: "S (km²)", num: true, f: dec(2) }, { k: "population_theorique", t: "Population", num: true },
       { k: "taux_couverture", t: "Taux", num: true, f: dec(2) }, { k: "type_maille", t: "Maille", f: badge },
       { k: "indice_forme", t: "IF", num: true, f: dec(2) }, { k: "indice_decentrement", t: "ID", num: true, f: dec(2) },
       { k: "discordance_ta", t: "T–A", num: true, f: dec(2) }, { k: "discordance_ar", t: "A–R", num: true, f: dec(2) }, { k: "discordance_tr", t: "T–R", num: true, f: dec(2) },
-      { k: "classe_kmeans", t: "K" }, { k: "classe_ch", t: "CH" }], d.postes, { tri: "numero", sens: 1 });
+      { k: "classe_kmeans", t: "K" }, { k: "classe_ch", t: "CAH" }], d.postes, { tri: "numero", sens: 1 });
     $("#t17-filtre").addEventListener("input", function (ev) { filtrer(ev.target.value); });
   })();
 
-  /* carte des sites proposes : Thiessen colores par type de maille, postes, sites */
+  /* carte des sites proposes : les 68 quartiers (densite de population), les 28 postes et les sites */
+  const DENS = [[5300, "#fff3b0", "< 5 300"], [10000, "#fdd27c", "5 300 – 10 000"], [18800, "#fb9b4b", "10 000 – 18 800"],
+                [26000, "#ea5a33", "18 800 – 26 000"], [Infinity, "#b91c1c", "> 26 000"]];
+  const couleurDensite = function (v) { for (let i = 0; i < DENS.length; i++) if (v < DENS[i][0]) return DENS[i][1]; return DENS[DENS.length - 1][1]; };
   async function carteSites(sites) {
     const el = $("#stx-map"); if (!el || !window.L) return;
     const map = L.map(el, { scrollWheelZoom: false }).setView([14.8, -16.94], 12);
-    const fonds = GP.creerFonds(); fonds[GP.fondSauveOu(fonds, "Plan sombre (Esri)")].addTo(map);
+    const fonds = GP.creerFonds(); fonds[GP.fondSauveOu(fonds, "Plan clair (Esri)")].addTo(map);
     L.control.scale({ imperial: false }).addTo(map);
     const leg = L.control({ position: "bottomleft" });
     leg.onAdd = function () { const div = L.DomUtil.create("div", "stx-leg");
-      div.innerHTML = Object.keys(MAILLE).map(function (k) { return '<span><i style="background:' + MAILLE[k][1] + '"></i>' + esc(k) + "</span>"; }).join("") +
-        '<span><i class="site"></i>Site proposé</span>'; return div; };
+      div.innerHTML = "<b>Densité (hab./km²)</b>" + DENS.map(function (c) { return '<span><i style="background:' + c[1] + '"></i>' + esc(c[2]) + "</span>"; }).join("") +
+        '<span><i class="poste"></i>Poste de santé</span><span><i class="site"></i>Site proposé (cercle de 1 km)</span>'; return div; };
     leg.addTo(map);
     try {
-      const [th, po] = await Promise.all([GP.getJSON("api/thiessen/"), GP.getJSON("api/postes/")]);
-      const g = L.geoJSON(th, { style: function (f) { const c = (MAILLE[f.properties.type_maille] || [0, "#64748b"])[1]; return { color: "#0b2237", weight: 1, fillColor: c, fillOpacity: 0.45 }; },
-        onEachFeature: function (f, l) { l.bindTooltip("<b>" + esc(f.properties.poste) + "</b><br>Taux de couverture : " + dec(2)(f.properties.taux_couverture), { sticky: true }); } }).addTo(map);
-      L.geoJSON(po, { pointToLayer: function (f, ll) { return L.circleMarker(ll, { radius: 4, color: "#fff", weight: 1.5, fillColor: "#0f766e", fillOpacity: 1 }); },
+      const [qu, po] = await Promise.all([GP.getJSON("api/quartiers/"), GP.getJSON("api/postes/")]);
+      const g = L.geoJSON(qu, { style: function (f) { return { color: "#ffffff", weight: 0.8, opacity: 0.9, fillColor: couleurDensite(Number(f.properties.densite) || 0), fillOpacity: 0.72 }; },
+        onEachFeature: function (f, l) { const q = f.properties;
+          l.bindTooltip("<b>" + esc(q.nom) + "</b> · " + esc(q.commune || "") + "<br>" + fmt(q.population) + " hab. · " + fmt(q.densite) + " hab./km²" +
+            (q.poste_plus_proche ? "<br>Poste le plus proche : " + esc(q.poste_plus_proche) + " (" + fmt(q.dist_poste_m) + " m)" : ""), { sticky: true }); } }).addTo(map);
+      L.geoJSON(po, { pointToLayer: function (f, ll) { return L.circleMarker(ll, { radius: 4.5, color: "#fff", weight: 1.5, fillColor: "#0f766e", fillOpacity: 1 }); },
         onEachFeature: function (f, l) { l.bindTooltip(esc(f.properties.nom)); } }).addTo(map);
       map.fitBounds(g.getBounds(), { padding: [10, 10] });
     } catch (e) { console.error(e); }
     sites.forEach(function (s, i) {
-      L.circle([s.lat, s.lon], { radius: 1000, color: "#facc15", weight: 1.5, dashArray: "5 5", fillOpacity: 0.08 }).addTo(map);
+      L.circle([s.lat, s.lon], { radius: 1000, color: "#1d4ed8", weight: 1.5, dashArray: "5 5", fillColor: "#3b82f6", fillOpacity: 0.08 }).addTo(map);
       L.marker([s.lat, s.lon], { icon: L.divIcon({ className: "", html: '<div class="site-pin">' + (i + 1) + "</div>", iconSize: [26, 26], iconAnchor: [13, 13] }) })
         .bindTooltip("<b>" + esc(s.nom) + "</b><br>" + dec(1)(s.dist_km) + " km du poste le plus proche").addTo(map);
     });
   }
-
-  /* figures d'analyse : visionneuse */
-  function ouvrir(f) {
-    $("#lb-img").src = f.dataset.img; $("#lb-img").alt = f.dataset.titre;
-    $("#lb-fig").textContent = "Figure " + f.dataset.figure; $("#lb-titre").textContent = f.dataset.titre;
-    $("#lb-dl").href = f.dataset.img; $("#lb-dl").setAttribute("download", "Thies_figure" + f.dataset.figure.replace(/\W+/g, "_") + ".png");
-    $("#lightbox").classList.remove("hidden"); document.body.classList.add("lb-open"); $("#lb-close").focus();
-  }
-  function fermer() { $("#lightbox").classList.add("hidden"); document.body.classList.remove("lb-open"); }
-  $$(".stx-fig").forEach(function (f) { $("button", f).addEventListener("click", function () { ouvrir(f); }); });
-  $("#lb-close").addEventListener("click", fermer);
-  $("#lightbox").addEventListener("click", function (e) { if (e.target.id === "lightbox") fermer(); });
-  document.addEventListener("keydown", function (e) { if (e.key === "Escape") fermer(); });
 })();

@@ -243,3 +243,9 @@ html[data-theme="light"] body.theme-dark .sitefoot b { color: #0f172a; }
 /* l'accueil garde son voile sombre sur la photo pour la lisibilite du titre */
 html[data-theme="light"] body.page-accueil .hero, html[data-theme="light"] body.page-accueil .hero h1, html[data-theme="light"] body.page-accueil .hero p { color: #fff; }
 html[data-theme="light"] body.theme-dark .ctq-f.on, html[data-theme="light"] body.theme-dark .stx-nav a.on { color: #fff; }
+
+html[data-theme="light"] body.page-accueil .src { background: #ffffff; box-shadow: 0 8px 24px rgba(15, 23, 42, .05); }
+html[data-theme="light"] body.page-accueil .src b { color: #0f172a; }
+
+html[data-theme="light"] .edge-tog, html[data-theme="light"] .map-max { background: rgba(255, 255, 255, .94); color: #0f172a; border-color: rgba(15, 23, 42, .14); }
+html[data-theme="light"] .edge-tog:hover, html[data-theme="light"] .map-max:hover { background: #0f766e; color: #fff; }

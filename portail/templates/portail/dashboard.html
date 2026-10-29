@@ -1,21 +1,21 @@
 {% extends "portail/base.html" %}
 {% load static %}
-{% block title %}Tableau de bord · Géoportail santé Thiès{% endblock %}
+{% block title %}Tableau de bord · Géoportail du Maillage Sanitaire{% endblock %}
 
 {% block content %}
 <main class="dash">
   <header class="dash-head">
     <h1>Tableau de bord</h1>
-    <p>Suivi opérationnel des 28 postes de santé : personnel et normes de l'OMS, services, équipements et profil des patients enquêtés.
+    <p>Suivi opérationnel des 28 postes de santé : personnel au regard des repères (OMS, repris par l'ANSD), services, équipements et déplacements des patients enquêtés.
       Les analyses spatiales du mémoire (couverture, aires de desserte, typologie) sont dans la page <a href="{% url 'statistiques' %}">Statistiques</a>.</p>
   </header>
   <section class="kpis" id="kpis"><div class="loading">Chargement…</div></section>
 
-  <h2 class="dash-t">Personnel et normes de l'OMS</h2>
+  <h2 class="dash-t">Personnel et repères de dotation</h2>
   <section class="grid">
     <article class="card-chart"><h3>Personnel par commune</h3><canvas id="c-personnel"></canvas></article>
-    <article class="card-chart"><h3>Respect des normes par poste <small>(nombre de postes sur 28)</small></h3><canvas id="c-normes"></canvas></article>
-    <article class="card-chart wide"><h3>Habitants par infirmier et par poste <small>(norme OMS : 5 000)</small></h3><canvas id="c-ratio"></canvas></article>
+    <article class="card-chart"><h3>Respect des repères par poste <small>(nombre de postes sur 28)</small></h3><canvas id="c-normes"></canvas></article>
+    <article class="card-chart wide"><h3>Habitants par infirmier et par poste <small>(repère : 5 000)</small></h3><canvas id="c-ratio"></canvas></article>
   </section>
   <section class="tables">
     <article class="card-table">
@@ -23,9 +23,12 @@
       <div class="scroll"><table id="t-commune"></table></div>
     </article>
     <article class="card-table">
-      <div class="th-row"><h3>Postes de santé et normes OMS</h3>
+      <div class="th-row"><h3>Déficit et surplus en infirmiers des 28 postes <small>(tableau 3-6)</small></h3>
         <input id="t-filtre" type="search" placeholder="Filtrer…" aria-label="Filtrer les postes"></div>
       <div class="scroll"><table id="t-postes"></table></div>
+      <p class="inf-leg"><span style="background:#991b1b;color:#fff">Déficit fort · rangs 1 à 7</span><span style="background:#f97316;color:#fff">Déficit moyen · 8 à 13</span><span style="background:#fa8072;color:#3b0a0a">Déficit faible · 14 à 18</span><span style="background:#86efac;color:#052e16">Surplus faible · 19 à 22</span><span style="background:#22c55e;color:#052e16">Surplus moyen · 23 à 26</span><span style="background:#166534;color:#fff">Surplus fort · 27 et 28</span>
+        <a href="{% url 'geoportail' %}?couches=aire_administrative&amp;couleur=infirmiers&amp;quartiers=0">Voir la carte de la maille →</a></p>
+      <p class="hint">Infirmiers requis = population administrative / 5 000, arrondi à l'entier ; écart = infirmiers en poste − infirmiers requis (négatif : déficit). Au total, il manque 32 infirmiers dans les postes déficitaires, alors que les postes en surplus n'en comptent que 14 de plus que le repère.</p>
       <p class="hint" id="note-tech"></p>
     </article>
   </section>
@@ -40,8 +43,6 @@
   <h2 class="dash-t">Enquête auprès des patients</h2>
   <section class="grid">
     <article class="card-chart"><h3>Patients enquêtés par commune</h3><canvas id="c-commune"></canvas></article>
-    <article class="card-chart"><h3>Sexe des patients</h3><canvas id="c-sexe"></canvas></article>
-    <article class="card-chart"><h3>Âge des patients</h3><canvas id="c-age"></canvas></article>
     <article class="card-chart"><h3>Niveau d'instruction</h3><canvas id="c-instruction"></canvas></article>
     <article class="card-chart"><h3>Moyen de transport</h3><canvas id="c-transport"></canvas></article>
     <article class="card-chart"><h3>Distance déclarée jusqu'au poste</h3><canvas id="c-distance"></canvas></article>
@@ -59,5 +60,5 @@
 {% endblock %}
 
 {% block scripts %}
-<script src="{% static 'portail/js/dashboard.js' %}"></script>
+<script src="{% static 'portail/js/dashboard.js' %}?v={{ VERSION }}"></script>
 {% endblock %}

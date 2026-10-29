@@ -4,7 +4,7 @@
 body.page-carte { overflow: hidden; }
 
 /* ---------- grille a trois colonnes ---------- */
-.cockpit { flex: 1; min-height: 0; display: grid; grid-template-columns: 300px minmax(0, 1fr) 400px; gap: 14px; padding: 12px 14px 14px; }
+.cockpit { --lw: 270px; --rw: 340px; flex: 1; min-height: 0; display: grid; grid-template-columns: var(--lw) minmax(0, 1fr) var(--rw); gap: 14px; padding: 12px 14px 14px; }
 .lcol, .rcol { min-height: 0; overflow-y: auto; padding-right: 2px; }
 .lcol { display: flex; flex-direction: column; }
 .ccol { min-width: 0; min-height: 0; display: flex; flex-direction: column; gap: 12px; }
@@ -235,7 +235,7 @@ body.page-carte .poste-pop .leaflet-popup-tip { background: rgba(7, 26, 44, .96)
 .modal-body .links li { padding: 4px 0; }
 
 /* ---------- ecrans moyens et petits ---------- */
-@media (max-width: 1360px) { .cockpit { grid-template-columns: 270px minmax(0, 1fr) 340px; } .eqtiles { grid-template-columns: repeat(2, 1fr); } .infostrip { left: 12px; bottom: 12px; right: 12px; } .map-legend { bottom: 84px; } }
+@media (max-width: 1360px) { .cockpit { --lw: 240px; --rw: 300px; } .eqtiles { grid-template-columns: repeat(2, 1fr); } .infostrip { left: 12px; bottom: 12px; right: 12px; } .map-legend { bottom: 84px; } }
 @media (max-width: 1100px) {
   body.page-carte #btn-panel { display: inline-block; }
   .cockpit { grid-template-columns: minmax(0, 1fr); padding: 8px; }
@@ -283,7 +283,7 @@ body.page-carte .leaflet-control-scale, body.page-carte .leaflet-control-scale-l
 
 /* ---------- portables (<= 1480 px) : version compacte ---------- */
 @media (max-width: 1480px) {
-  .cockpit { grid-template-columns: 270px minmax(0, 1fr) 350px; gap: 12px; }
+  .cockpit { --lw: 250px; --rw: 310px; gap: 12px; }
   body.page-carte .topbar { gap: 12px; padding: 0 14px; }
   body.page-carte .brand-text small, .utext small, .caret { display: none; }
   body.page-carte .nav a, body.page-carte .nav .navbtn { padding: 8px 9px; font-size: 13px; }
@@ -379,3 +379,25 @@ body.page-carte .leaflet-top.leaflet-left { margin-left: 0; margin-top: 62px; }
 .tcard-proche .seg-mode { margin: 8px 0; }
 .proche-best .pb-l { display: block; }
 .proche-best .iti-mode { font-size: 24px; }
+
+
+/* ---------- agrandir la carte (ordinateur) : panneaux masquables ---------- */
+.edge-tog { position: absolute; z-index: 1000; top: 50%; transform: translateY(-50%); width: 22px; height: 64px; border: 1px solid var(--line); cursor: pointer;
+  background: rgba(6, 27, 45, .88); color: #e8f1f8; font-size: 20px; font-weight: 700; line-height: 1; display: grid; place-items: center; padding: 0;
+  box-shadow: 0 6px 18px rgba(0, 0, 0, .35); transition: background .15s, width .15s; }
+.edge-tog:hover { background: #0f766e; width: 26px; }
+.edge-tog:focus-visible, .map-max:focus-visible { outline: 3px solid rgba(45, 212, 191, .6); outline-offset: 2px; }
+.edge-tog.left { left: 0; border-left: 0; border-radius: 0 10px 10px 0; }
+.edge-tog.right { right: 0; border-right: 0; border-radius: 10px 0 0 10px; }
+.map-max { position: absolute; right: 64px; top: 14px; z-index: 1000; height: 38px; display: inline-flex; align-items: center; gap: 7px; cursor: pointer;
+  padding: 7px 14px; border-radius: 999px; border: 1px solid var(--line); background: rgba(6, 27, 45, .88); color: #e8f1f8; font: 600 12.5px/1 inherit; font-family: inherit;
+  box-shadow: 0 6px 18px rgba(0, 0, 0, .35); }
+.map-max:hover { background: #0f766e; }
+.map-max .ico { font-size: 15px; }
+body.hide-left .lcol, body.hide-right .rcol { display: none; }
+body.hide-left .cockpit { grid-template-columns: minmax(0, 1fr) var(--rw); }
+body.hide-right .cockpit { grid-template-columns: var(--lw) minmax(0, 1fr); }
+body.hide-left.hide-right .cockpit { grid-template-columns: minmax(0, 1fr); }
+body.map-maxi .kpirow { display: none; }
+body.map-maxi .cockpit { padding: 8px; gap: 8px; }
+@media (max-width: 1100px) { .edge-tog, .map-max { display: none; } body.hide-left .lcol, body.hide-right .rcol { display: block; } }
