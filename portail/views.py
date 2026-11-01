@@ -65,7 +65,7 @@ RAYON_ACCES_KM = 5          # repere de la litterature (5 km ou 1 heure de march
 NORMES = {"poste": NORME_POSTE, "medecin": NORME_MEDECIN, "infirmier": NORME_INFIRMIER,
           "technicien": NORME_TECHNICIEN, "rayon_km": RAYON_ACCES_KM}
 
-# nom affiche d'un poste : nom usuel du memoire (« PS Thiès Nonè »), a defaut le nom de la base
+# nom affiche d'un poste : nom usuel du memoire (« PS Thiès None »), a defaut le nom de la base
 NOM_P = "COALESCE('PS ' || p.nom_usuel, p.nom)"
 # typologie des mailles recalculee depuis la population de l'aire theorique (repere 10 000 hab. par poste) :
 # ne depend pas du libelle enregistre (qu'un import SQL sous Windows peut abimer : « dotÃ©e »)

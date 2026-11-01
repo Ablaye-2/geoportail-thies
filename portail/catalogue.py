@@ -172,15 +172,15 @@ INDICES_MEMOIRE = [   # tableau 3-3 : (indice, theorique, administrative, reelle
 ZONES_CRITIQUES = [   # section 3.8
     ("Est dense", "Hersent, Cité Lamy, Darou Salam, Silmang, Sampathe, Cité Niakh", "La population de l'aire théorique atteint 1,6 à 2,5 fois le repère de 10 000 habitants : des aires compactes, proches d'un poste mais très chargées."),
     ("Centre-nord", "Médina Fall 1, Kawsara, Takhikao", "Des aires compactes regroupant des quartiers denses (1,6 à 1,9 fois le repère) ; Médina Fall 1 et 2 se partagent un quartier de 37 280 habitants, le second absorbant en pratique les patients des deux mailles."),
-    ("Périphérie nord et ouest", "ZAC, Diakhao, Keur Saib Ndoye, Thiès Nonè", "Quatre polygones couvrant 59 % de la superficie, des postes excentrés (décentrement de 0,74 à 1,21) : l'enjeu est l'éloignement plus que la charge, sauf à Diakhao (2,0 fois le repère)."),
-    ("Thiès Nonè", "Thiès Nonè", "La quasi-totalité de la maille administrative (25,8 km²) n'alimente pas le poste : l'aire réelle se réduit à 0,4 km² autour du poste."),
+    ("Périphérie nord et ouest", "ZAC, Diakhao, Keur Saib Ndoye, Thiès None", "Quatre polygones couvrant 59 % de la superficie, des postes excentrés (décentrement de 0,74 à 1,21) : l'enjeu est l'éloignement plus que la charge, sauf à Diakhao (2,0 fois le repère)."),
+    ("Thiès None", "Thiès None", "La quasi-totalité de la maille administrative (25,8 km²) n'alimente pas le poste : l'aire réelle se réduit à 0,4 km² autour du poste."),
     ("Thiès Ouest", "Commune de Thiès Ouest", "La maille administrative y reflète le moins la pratique (discordance moyenne administrative / réelle de 0,45, contre 0,26 à Thiès Nord et 0,19 à Thiès Est)."),
 ]
 SITES_PROPOSES = [   # section 5.2.1 : points les plus eloignes d'un poste
     {"nom": "Nord-ouest (polygone de Diakhao, prioritaire)", "lat": 14.830, "lon": -16.985, "dist_km": 5.8},
     {"nom": "Nord (polygone de ZAC)", "lat": 14.844, "lon": -16.967, "dist_km": 4.9},
     {"nom": "Nord-est (polygone de ZAC)", "lat": 14.850, "lon": -16.944, "dist_km": 3.6},
-    {"nom": "Ouest (polygone de Thiès Nonè)", "lat": 14.808, "lon": -16.983, "dist_km": 3.6},
+    {"nom": "Ouest (polygone de Thiès None)", "lat": 14.808, "lon": -16.983, "dist_km": 3.6},
 ]
 HYPOTHESES = [   # section 5.1.1
     ("H1", "L'aire administrative est plus proche de l'aire réelle que de l'aire théorique",
