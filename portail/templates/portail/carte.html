@@ -208,19 +208,24 @@
           </div>
           <div class="tcard tcard-iti" id="tool-iti-card">
             <div class="tlbl">🧭 Itinéraire jusqu'à un poste de santé</div>
-            <p class="thint">Trajet par les rues (réseau OpenStreetMap), avec les consignes pas à pas.</p>
-            <label class="thint" for="iti-poste">Destination</label>
-            <select id="iti-poste"><option value="">Le poste le plus proche (par la route)</option></select>
-            <div class="seg-mode" id="iti-modes" role="group" aria-label="Moyen de déplacement">
-              <button class="seg-m on" type="button" data-mode="foot" aria-pressed="true">🚶 À pied</button>
-              <button class="seg-m" type="button" data-mode="car" aria-pressed="false">🚗 Voiture</button>
-              <button class="seg-m" type="button" data-mode="bike" aria-pressed="false">🚲 Vélo</button>
-            </div>
-            <label class="thint">Départ</label>
-            <div class="trow">
-              <button class="tbtn" id="iti-gps" type="button">📍 Ma position</button>
-              <button class="tbtn ghost" id="iti-carte" type="button">👆 Choisir sur la carte</button>
-            </div>
+            <p class="thint">Trajet réel <b>par les rues</b> (réseau OpenStreetMap), avec les consignes pas à pas.</p>
+            <ol class="iti-form">
+              <li><span class="iti-n">1</span><div><label class="iti-lab">Moyen de déplacement</label>
+                <div class="seg-mode" id="iti-modes" role="group" aria-label="Moyen de déplacement">
+                  <button class="seg-m on" type="button" data-mode="foot" aria-pressed="true">🚶 À pied</button>
+                  <button class="seg-m" type="button" data-mode="car" aria-pressed="false">🚗 Voiture</button>
+                  <button class="seg-m" type="button" data-mode="bike" aria-pressed="false">🚲 Vélo</button>
+                </div></div></li>
+              <li><span class="iti-n">2</span><div><label class="iti-lab">Point de départ</label>
+                <div class="trow">
+                  <button class="tbtn" id="iti-gps" type="button">📍 Ma position</button>
+                  <button class="tbtn ghost" id="iti-carte" type="button">👆 Sur la carte</button>
+                </div>
+                <select id="iti-quartier" aria-label="Partir d'un quartier"><option value="">… ou partir d'un quartier</option></select>
+                <p class="iti-dep" id="iti-dep"></p></div></li>
+              <li><span class="iti-n">3</span><div><label class="iti-lab" for="iti-poste">Destination</label>
+                <select id="iti-poste"><option value="">Le poste le plus proche (par les rues)</option></select></div></li>
+            </ol>
             <div id="out-iti" class="out" aria-live="polite"></div>
             <button class="tbtn ghost block" id="iti-clear" type="button">Effacer l'itinéraire</button>
           </div>

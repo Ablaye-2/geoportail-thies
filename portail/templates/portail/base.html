@@ -23,12 +23,12 @@
     </a>
     {% block topbar_extra %}{% endblock %}
     <nav class="nav" aria-label="Navigation principale">
-      <a href="{% url 'accueil' %}" class="{% if page == 'accueil' %}active{% endif %}">🏠 Accueil</a>
-      <a href="{% url 'cartotheque' %}" class="{% if page == 'cartotheque' %}active{% endif %}">🗂️ Cartothèque</a>
-      <a href="{% url 'statistiques' %}" class="{% if page == 'statistiques' %}active{% endif %}">📈 Statistiques</a>
-      <a href="{% url 'dashboard' %}" class="{% if page == 'dashboard' %}active{% endif %}">📊 Tableau de bord</a>
-      <a href="{% url 'donnees' %}" class="{% if page == 'donnees' %}active{% endif %}">💾 Données</a>
-      <a href="{% url 'admin:index' %}" class="nav-admin">⚙️ Administration</a>
+      <a href="{% url 'accueil' %}" class="{% if page == 'accueil' %}active{% endif %}"><svg class="nico" viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="M3 10.5 12 3l9 7.5"/><path d="M5 9.5V20a1 1 0 0 0 1 1h4v-6h4v6h4a1 1 0 0 0 1-1V9.5"/></svg><span>Accueil</span></a>
+      <a href="{% url 'cartotheque' %}" class="{% if page == 'cartotheque' %}active{% endif %}"><svg class="nico" viewBox="0 0 24 24" aria-hidden="true" focusable="false"><rect x="6" y="6" width="15" height="13" rx="2"/><path d="M3 15V5a2 2 0 0 1 2-2h12"/><circle cx="11" cy="10.5" r="1.6"/><path d="m21 16-4.2-4.2L9 19"/></svg><span>Cartothèque</span></a>
+      <a href="{% url 'statistiques' %}" class="{% if page == 'statistiques' %}active{% endif %}"><svg class="nico" viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="M3 3v18h18"/><path d="m7 15 4-4 3 3 6-7"/><path d="M16 7h4v4"/></svg><span>Statistiques</span></a>
+      <a href="{% url 'dashboard' %}" class="{% if page == 'dashboard' %}active{% endif %}"><svg class="nico" viewBox="0 0 24 24" aria-hidden="true" focusable="false"><rect x="3" y="3" width="7" height="9" rx="1.5"/><rect x="14" y="3" width="7" height="5" rx="1.5"/><rect x="14" y="12" width="7" height="9" rx="1.5"/><rect x="3" y="16" width="7" height="5" rx="1.5"/></svg><span>Tableau de bord</span></a>
+      <a href="{% url 'donnees' %}" class="{% if page == 'donnees' %}active{% endif %}"><svg class="nico" viewBox="0 0 24 24" aria-hidden="true" focusable="false"><ellipse cx="12" cy="5.5" rx="8" ry="2.8"/><path d="M4 5.5v6.5c0 1.6 3.6 2.8 8 2.8s8-1.2 8-2.8V5.5"/><path d="M4 12v6.5c0 1.6 3.6 2.8 8 2.8s8-1.2 8-2.8V12"/></svg><span>Données</span></a>
+      <a href="{% url 'admin:index' %}" class="nav-admin"><svg class="nico" viewBox="0 0 24 24" aria-hidden="true" focusable="false"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.7 1.7 0 0 0 .3 1.8l.1.1a2 2 0 1 1-2.8 2.8l-.1-.1a1.7 1.7 0 0 0-1.8-.3 1.7 1.7 0 0 0-1 1.5V21a2 2 0 1 1-4 0v-.1a1.7 1.7 0 0 0-1.1-1.5 1.7 1.7 0 0 0-1.8.3l-.1.1a2 2 0 1 1-2.8-2.8l.1-.1a1.7 1.7 0 0 0 .3-1.8 1.7 1.7 0 0 0-1.5-1H3a2 2 0 1 1 0-4h.1a1.7 1.7 0 0 0 1.5-1.1 1.7 1.7 0 0 0-.3-1.8l-.1-.1a2 2 0 1 1 2.8-2.8l.1.1a1.7 1.7 0 0 0 1.8.3H9a1.7 1.7 0 0 0 1-1.5V3a2 2 0 1 1 4 0v.1a1.7 1.7 0 0 0 1 1.5 1.7 1.7 0 0 0 1.8-.3l.1-.1a2 2 0 1 1 2.8 2.8l-.1.1a1.7 1.7 0 0 0-.3 1.8V9a1.7 1.7 0 0 0 1.5 1H21a2 2 0 1 1 0 4h-.1a1.7 1.7 0 0 0-1.5 1Z"/></svg><span>Administration</span></a>
     </nav>
     <a class="geo-launch{% if page == 'carte' %} active{% endif %}" href="{% url 'geoportail' %}" title="Ouvrir le géoportail" aria-label="Ouvrir le géoportail">
       <svg viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="M9 3 3 5.5v15.5l6-2.5 6 2.5 6-2.5V3l-6 2.5L9 3Z" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linejoin="round"/><path d="M9 3v15.5M15 5.5V21" fill="none" stroke="currentColor" stroke-width="1.7"/><path d="M12 8.2a2.6 2.6 0 0 0-2.6 2.6c0 2 2.6 4.6 2.6 4.6s2.6-2.6 2.6-4.6A2.6 2.6 0 0 0 12 8.2Z" fill="currentColor" stroke="#061b2d" stroke-width=".9"/></svg>
@@ -41,15 +41,15 @@
     {% block topbar_end %}
     <div class="usermenu">
       <button class="userchip" id="userchip" type="button" aria-haspopup="true" aria-expanded="false">
-        <span class="uavatar">👤</span>
+        <span class="uavatar"><svg class="nico" viewBox="0 0 24 24" aria-hidden="true" focusable="false"><circle cx="12" cy="8" r="4"/><path d="M4 21c0-4 3.6-6.5 8-6.5s8 2.5 8 6.5"/></svg></span>
         <span class="utext"><b>{% if user.is_authenticated %}{{ user.get_username }}{% else %}{{ PROFIL.0 }}{% endif %}</b><small>{% if user.is_authenticated %}Connecté{% else %}{{ PROFIL.1 }}{% endif %}</small></span>
         <span class="caret">⌄</span>
       </button>
       <div class="umenu hidden" id="umenu">
-        <a href="{% url 'geoportail' %}">🗺️ Géoportail</a>
-        <a href="{% url 'cartotheque' %}">🗂️ Cartothèque</a>
-        <a href="{% url 'statistiques' %}">📈 Statistiques</a>
-        <a href="{% url 'admin:index' %}">⚙️ Administration</a>
+        <a href="{% url 'geoportail' %}"><svg class="nico" viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="M9 3 3 5.5v15.5l6-2.5 6 2.5 6-2.5V3l-6 2.5L9 3Z"/><path d="M9 3v15.5M15 5.5V21"/></svg>Géoportail</a>
+        <a href="{% url 'cartotheque' %}"><svg class="nico" viewBox="0 0 24 24" aria-hidden="true" focusable="false"><rect x="6" y="6" width="15" height="13" rx="2"/><path d="M3 15V5a2 2 0 0 1 2-2h12"/><circle cx="11" cy="10.5" r="1.6"/><path d="m21 16-4.2-4.2L9 19"/></svg>Cartothèque</a>
+        <a href="{% url 'statistiques' %}"><svg class="nico" viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="M3 3v18h18"/><path d="m7 15 4-4 3 3 6-7"/><path d="M16 7h4v4"/></svg>Statistiques</a>
+        <a href="{% url 'admin:index' %}"><svg class="nico" viewBox="0 0 24 24" aria-hidden="true" focusable="false"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.7 1.7 0 0 0 .3 1.8l.1.1a2 2 0 1 1-2.8 2.8l-.1-.1a1.7 1.7 0 0 0-1.8-.3 1.7 1.7 0 0 0-1 1.5V21a2 2 0 1 1-4 0v-.1a1.7 1.7 0 0 0-1.1-1.5 1.7 1.7 0 0 0-1.8.3l-.1.1a2 2 0 1 1-2.8-2.8l.1-.1a1.7 1.7 0 0 0 .3-1.8 1.7 1.7 0 0 0-1.5-1H3a2 2 0 1 1 0-4h.1a1.7 1.7 0 0 0 1.5-1.1 1.7 1.7 0 0 0-.3-1.8l-.1-.1a2 2 0 1 1 2.8-2.8l.1.1a1.7 1.7 0 0 0 1.8.3H9a1.7 1.7 0 0 0 1-1.5V3a2 2 0 1 1 4 0v.1a1.7 1.7 0 0 0 1 1.5 1.7 1.7 0 0 0 1.8-.3l.1-.1a2 2 0 1 1 2.8 2.8l-.1.1a1.7 1.7 0 0 0-.3 1.8V9a1.7 1.7 0 0 0 1.5 1H21a2 2 0 1 1 0 4h-.1a1.7 1.7 0 0 0-1.5 1Z"/></svg>Administration</a>
       </div>
     </div>
     {% endblock %}
