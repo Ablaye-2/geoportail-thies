@@ -507,7 +507,7 @@
     $("#tb-mesure").classList.toggle("on", S.tool === "mesure");
     $("#tool-mesure").textContent = S.tool === "mesure" ? "Mesure en cours…" : "Mesurer";
     $("#iti-carte").classList.toggle("active", S.tool === "iti");
-    $("#iti-carte").textContent = S.tool === "iti" ? "👆 Cliquez sur la carte…" : "👆 Choisir sur la carte";
+    $("#iti-carte").textContent = S.tool === "iti" ? "👆 Cliquez la carte…" : "👆 Sur la carte";
     $("#map").classList.toggle("tool-active", !!S.tool);
     if (S.tool === "mesure") map.doubleClickZoom.disable(); else map.doubleClickZoom.enable();
     if (S.tool === "mesure" && S.mesure && S.mesure.fini) effacerMesure();   // nouvelle mesure apres un double-clic
@@ -571,7 +571,15 @@
   function proche_maPosition() {
     if (!navigator.geolocation) { toast("Votre appareil ne permet pas la localisation : cliquez sur la carte.", "err"); if (S.tool !== "proche") setTool("proche"); return; }
     $("#out-proche").innerHTML = '<p class="thint">Localisation en cours… autorisez-la si le navigateur le demande.</p>';
-    navigator.geolocation.getCurrentPosition(function (pos) { plusProche(L.latLng(pos.coords.latitude, pos.coords.longitude)); },
+    navigator.geolocation.getCurrentPosition(function (pos) {
+        const ll = L.latLng(pos.coords.latitude, pos.coords.longitude), loin = horsZone(ll), prec = Math.round(pos.coords.accuracy || 0);
+        if (loin || prec > 1500) {
+          $("#out-proche").innerHTML = '<p class="iti-err">' + (loin ? "Votre position est à environ <b>" + distTxt(loin) + "</b> de Thiès, hors de la zone d'étude."
+            : "Position <b>imprécise</b> (± " + distTxt(prec) + ") : sur un ordinateur sans GPS, le navigateur la devine à partir de la connexion Internet.") +
+            " Cliquez plutôt <b>sur la carte</b> à l'endroit où vous êtes.</p>";
+          if (S.tool !== "proche") setTool("proche"); return;
+        }
+        plusProche(ll); },
       function (err) {
         toast(err.code === 1 ? "Localisation refusée : cliquez sur la carte pour choisir le point." : "Position introuvable : cliquez sur la carte.", "err");
         if (S.tool !== "proche") setTool("proche");
@@ -677,9 +685,9 @@
     const dr = $("#drawer-analyse"), mp = $("#map").getBoundingClientRect();
     if (dr && !dr.classList.contains("hidden") && window.innerWidth > 900) {
       const r = dr.getBoundingClientRect();
-      return { paddingTopLeft: [Math.max(60, r.right - mp.left + 30), 60], paddingBottomRight: [60, 60], maxZoom: 17 };
+      return { paddingTopLeft: [Math.max(60, r.right - mp.left + 40), 70], paddingBottomRight: [90, 100], maxZoom: 17 };
     }
-    return { padding: [60, 60], maxZoom: 17 };
+    return { paddingTopLeft: [60, 70], paddingBottomRight: [90, 100], maxZoom: 17 };
   }
   function urlRoute(a, b, mode) {
     return ROUTAGE.replace("{mode}", mode) + a.lng.toFixed(6) + "," + a.lat.toFixed(6) + ";" + b.lng.toFixed(6) + "," + b.lat.toFixed(6) +
@@ -738,50 +746,95 @@
   const DIR = { "uturn": "Faites demi-tour", "sharp right": "Tournez franchement à droite", "right": "Tournez à droite",
                 "slight right": "Serrez à droite", "straight": "Continuez tout droit", "slight left": "Serrez à gauche",
                 "left": "Tournez à gauche", "sharp left": "Tournez franchement à gauche" };
-  function consigne(st, dernier) {
-    const m = st.maneuver || {}, nom = st.name || st.ref || "", sur = nom ? " sur " + nom : "";
+  const FLECHE = { "uturn": "↶", "sharp right": "↱", "right": "↱", "slight right": "↗", "straight": "↑", "slight left": "↖", "left": "↰", "sharp left": "↰" };
+  function nomVoie(st) { return st.name || st.ref || ""; }
+  function consigne(st) {
+    const m = st.maneuver || {}, nom = nomVoie(st), sur = nom ? " sur " + nom : "";
     switch (m.type) {
-      case "depart": return "Partez" + (nom ? " par " + nom : "");
-      case "arrive": return dernier ? "Vous êtes arrivé au poste de santé" : "Arrivée à l'étape";
+      case "depart": return "Partez" + (nom ? " par " + nom : "") + (m.bearing_after != null ? " vers " + cap(m.bearing_after) : "");
+      case "arrive": return "Arrivée au poste de santé" + (m.modifier === "left" ? " (sur votre gauche)" : m.modifier === "right" ? " (sur votre droite)" : "");
       case "roundabout": case "rotary": case "roundabout turn": case "exit roundabout": case "exit rotary":
         return "Au rond-point, prenez la " + (m.exit ? m.exit + (m.exit === 1 ? "re" : "e") + " sortie" : "sortie") + (nom ? " vers " + nom : "");
       case "merge": return "Rejoignez " + (nom || "la voie");
+      case "end of road": return (m.modifier && m.modifier.indexOf("left") >= 0 ? "Au bout de la rue, tournez à gauche" : "Au bout de la rue, tournez à droite") + sur;
+      case "fork": return (m.modifier && m.modifier.indexOf("left") >= 0 ? "À l'embranchement, restez à gauche" : "À l'embranchement, restez à droite") + sur;
       case "new name": case "continue": case "notification":
-        return m.modifier && m.modifier !== "straight" ? (DIR[m.modifier] || "Continuez") + sur : "Continuez" + sur;
-      default: return (DIR[m.modifier] || "Continuez") + sur;    // turn, end of road, fork, on/off ramp, use lane
+        return m.modifier && m.modifier !== "straight" ? (DIR[m.modifier] || "Continuez") + sur : "Continuez tout droit" + sur;
+      default: return (DIR[m.modifier] || "Continuez") + sur;    // turn, on/off ramp, use lane
     }
+  }
+  function cap(deg) { return ["le nord", "le nord-est", "l'est", "le sud-est", "le sud", "le sud-ouest", "l'ouest", "le nord-ouest"][Math.round(((deg % 360) + 360) % 360 / 45) % 8]; }
+  function fleche(st) {
+    const m = st.maneuver || {};
+    if (m.type === "depart") return "●"; if (m.type === "arrive") return "✚";
+    if (/roundabout|rotary/.test(m.type || "")) return "⟳";
+    return FLECHE[m.modifier] || "↑";
+  }
+  /* etapes nettoyees : sans les etapes de 0 m, les « continuez » sans changement de rue fusionnes dans l'etape precedente */
+  function etapesPropres(r) {
+    const out = [];
+    (r.legs || []).forEach(function (leg) {
+      (leg.steps || []).forEach(function (st) {
+        const m = st.maneuver || {}, prev = out[out.length - 1];
+        const continuation = prev && (m.type === "continue" || m.type === "new name" || m.type === "notification") &&
+          (!m.modifier || m.modifier === "straight" || /slight/.test(m.modifier)) && (nomVoie(st) === nomVoie(prev.st) || !nomVoie(st));
+        if (m.type !== "arrive" && m.type !== "depart" && (st.distance < 3 || continuation) && prev) {
+          prev.distance += st.distance; prev.duree += st.duration;
+          if (st.geometry) prev.coords = prev.coords.concat(st.geometry.coordinates);
+          return;
+        }
+        out.push({ st: st, distance: st.distance, duree: st.duration, coords: st.geometry ? st.geometry.coordinates.slice() : [] });
+      });
+    });
+    return out;
   }
   const distTxt = function (m) { return m >= 1000 ? fmt(m / 1000, 1) + " km" : fmt(Math.max(5, Math.round(m / 5) * 5)) + " m"; };
   const dureeTxt = function (sec) { const mn = Math.max(1, Math.round(sec / 60)); return mn >= 60 ? Math.floor(mn / 60) + " h " + String(mn % 60).padStart(2, "0") : mn + " min"; };
+  const heureTxt = function (sec) { const d = new Date(Date.now() + sec * 1000); return d.getHours() + " h " + String(d.getMinutes()).padStart(2, "0"); };
+
+  /* marqueurs A (depart, deplacable) et B (poste d'arrivee) */
+  const icoAB = function (t, c) { return L.divIcon({ className: "iti-pin", html: '<span style="--c:' + c + '"><i>' + t + "</i></span>", iconSize: [30, 38], iconAnchor: [15, 36] }); };
 
   function effacerItineraire() {
     if (ITI.couche) { map.removeLayer(ITI.couche); ITI.couche = null; }
-    ITI.dernier = null;
+    ITI.dernier = null; ITI.surbrillance = null;
     $("#out-iti").innerHTML = "";
+    $("#iti-dep").textContent = "";
+  }
+  /* centre de Thies (emprise des quartiers) : sert a refuser un depart GPS trop loin de la zone d'etude */
+  function horsZone(ll) {
+    if (!S.boundsQuartiers) S.boundsQuartiers = L.geoJSON(S.quartiers).getBounds();
+    return S.boundsQuartiers.pad(0.6).contains(ll) ? 0 : map.distance(ll, S.boundsQuartiers.getCenter());
   }
 
-  async function calculerItineraire(depart) {
-    ITI.depart = depart || ITI.depart;
-    if (!ITI.depart) { $("#out-iti").innerHTML = '<p class="thint">Indiquez d\'abord votre point de départ.</p>'; return; }
+  let itiJeton = 0;
+  async function calculerItineraire(depart, libelle) {
+    if (depart) { ITI.depart = depart; ITI.libDepart = libelle || "Point choisi sur la carte"; }
+    if (!ITI.depart) { $("#out-iti").innerHTML = '<p class="thint">Choisissez d\'abord votre point de départ (étape 2).</p>'; return; }
+    const jeton = ++itiJeton;
     const a = ITI.depart, choix = $("#iti-poste").value, mode = ITI.mode, out = $("#out-iti");
-    out.innerHTML = '<p class="thint">Calcul de l\'itinéraire par les rues…</p>';
-    // destination : un poste choisi, ou le plus proche PAR LES RUES parmi les 28 postes
-    let candidats;
-    if (choix) candidats = S.postes.features.filter(function (f) { return String(f.properties.id) === choix; }).map(function (f) { return f.properties; });
-    else {
-      const cl = await classerParRoute(a, mode);
-      candidats = cl ? cl.slice(0, 1).map(function (x) { return x.p; }) : postesParVol(a).slice(0, 1).map(function (x) { return x.p; });
-    }
-    if (!candidats || !candidats.length) { out.innerHTML = '<p class="thint">Aucun poste trouvé.</p>'; return; }
-    const res = await Promise.all(candidats.map(function (p) {
-      return demanderRoute(a, L.latLng(p.lat, p.lon), mode).then(function (r) { return { p: p, r: r }; }, function (e) { return { p: p, err: e }; });
-    }));
-    const ok = res.filter(function (x) { return x.r; }).sort(function (x, y) { return x.r.duration - y.r.duration; });
+    $("#iti-dep").innerHTML = "Départ : <b>" + esc(ITI.libDepart) + "</b>";
+    out.innerHTML = '<p class="thint iti-wait"><span class="spin"></span> Calcul de l\'itinéraire ' + MODES[mode].lib.toLowerCase() + " par les rues…</p>";
     if (ITI.couche) map.removeLayer(ITI.couche);
     ITI.couche = L.layerGroup().addTo(map);
-    const depMk = L.circleMarker(a, { pane: "outils", radius: 8, color: "#fff", weight: 3, fillColor: "#2563eb", fillOpacity: 1 }).bindTooltip("Départ").addTo(ITI.couche);
-    if (!ok.length) {                                          // service injoignable : ligne droite + lien OpenStreetMap
-      const p = candidats[0], b = L.latLng(p.lat, p.lon);
+    const depMk = L.marker(a, { pane: "outils", icon: icoAB("A", "#2563eb"), draggable: true, zIndexOffset: 1000, title: "Départ (déplaçable)" }).addTo(ITI.couche);
+    depMk.on("dragend", function () { calculerItineraire(depMk.getLatLng(), "Point déplacé sur la carte"); });
+    // destination : un poste choisi, ou le plus proche PAR LES RUES parmi les 28 postes
+    let p = null, nbCompares = 0;
+    if (choix) p = (S.postes.features.filter(function (f) { return String(f.properties.id) === choix; })[0] || {}).properties;
+    else {
+      const cl = await classerParRoute(a, mode);
+      if (jeton !== itiJeton) return;
+      nbCompares = cl ? cl.length : 0;
+      p = cl ? cl[0].p : (postesParVol(a)[0] || {}).p;
+    }
+    if (!p) { out.innerHTML = '<p class="thint">Aucun poste trouvé.</p>'; return; }
+    const b = L.latLng(p.lat, p.lon);
+    let r = null;
+    try { r = await demanderRoute(a, b, mode); } catch (e) { r = null; }
+    if (jeton !== itiJeton) return;
+    L.marker(b, { pane: "outils", icon: icoAB("B", "#dc2626"), zIndexOffset: 900, title: p.nom }).bindTooltip(esc(p.nom)).addTo(ITI.couche);
+    if (!r) {                                                  // service injoignable : ligne droite + lien OpenStreetMap
       L.polyline([a, b], { pane: "outils", color: "#f59e0b", weight: 3, dashArray: "8 7" }).addTo(ITI.couche);
       map.fitBounds(L.latLngBounds([a, b]), margesCarte());
       out.innerHTML = '<p class="iti-err">Le service d\'itinéraire OpenStreetMap ne répond pas (connexion Internet nécessaire). Ligne droite affichée jusqu\'à <b>' +
@@ -789,58 +842,114 @@
         '<a class="tbtn block iti-osm" target="_blank" rel="noopener" href="' + lienOSM(a, b, mode) + '">Ouvrir l\'itinéraire sur openstreetmap.org ↗</a>';
       return;
     }
-    const best = ok[0], p = best.p, r = best.r, b = L.latLng(p.lat, p.lon);
     ITI.dernier = { p: p, r: r, a: a, b: b };
-    const ligne = L.geoJSON(r.geometry, { pane: "outils", style: { color: "#0b2237", weight: 9, opacity: 0.85, lineCap: "round" } }).addTo(ITI.couche);
-    L.geoJSON(r.geometry, { pane: "outils", style: { color: "#22d3ee", weight: 5, opacity: 1, lineCap: "round" } }).addTo(ITI.couche);
-    depMk.bringToFront();
-    map.fitBounds(ligne.getBounds(), margesCarte());
+    const coords = r.geometry.coordinates, ll = coords.map(function (c) { return [c[1], c[0]]; });
+    // raccords en pointilles : depart -> premiere rue, derniere rue -> poste
+    if (ll.length) {
+      if (map.distance(a, ll[0]) > 8) L.polyline([a, ll[0]], { pane: "outils", color: "#2563eb", weight: 3, dashArray: "2 7", lineCap: "round" }).addTo(ITI.couche);
+      if (map.distance(b, ll[ll.length - 1]) > 8) L.polyline([ll[ll.length - 1], b], { pane: "outils", color: "#dc2626", weight: 3, dashArray: "2 7", lineCap: "round" }).addTo(ITI.couche);
+    }
+    const ligne = L.polyline(ll, { pane: "outils", color: "#0b2237", weight: 10, opacity: 0.8, lineCap: "round", lineJoin: "round" }).addTo(ITI.couche);
+    L.polyline(ll, { pane: "outils", color: MODES[mode].coul, weight: 6, opacity: 1, lineCap: "round", lineJoin: "round" }).addTo(ITI.couche);
+    ITI.surbrillance = L.layerGroup().addTo(ITI.couche);
+    map.fitBounds(ligne.getBounds().extend(a).extend(b), margesCarte());
     if (S.pLayers[p.id]) { deselectionner(); const el = S.pLayers[p.id].getElement(); if (el) el.classList.add("sel"); S.sel = { kind: "p", layer: S.pLayers[p.id] }; }
-    const steps = [];
-    (r.legs || []).forEach(function (leg, li) { (leg.steps || []).forEach(function (st, i) { steps.push({ st: st, dernier: li === r.legs.length - 1 && i === leg.steps.length - 1 }); }); });
+    const steps = etapesPropres(r), vol = map.distance(a, b);
     out.innerHTML =
-      '<div class="iti-sum"><span class="iti-mode">' + MODES[mode].ico + '</span><div><b>' + esc(p.nom) + "</b><br>" +
-      '<span class="big">' + distTxt(r.distance) + "</span> · <b>" + dureeTxt(r.duration) + "</b> " + MODES[mode].lib.toLowerCase() + "</div></div>" +
-      (!choix ? '<p class="thint">Poste le plus proche par les rues (comparé aux ' + S.postes.features.length + " postes).</p>" : "") +
+      '<div class="iti-sum"><span class="iti-mode">' + MODES[mode].ico + '</span><div class="iti-sum-t">' +
+        '<div class="iti-dest">' + (p.numero != null ? '<span class="iti-num">' + p.numero + "</span>" : "") + "<b>" + esc(p.nom) + "</b></div>" +
+        '<div class="iti-chiffres"><span class="big">' + dureeTxt(r.duration) + '</span><span class="iti-km">' + distTxt(r.distance) + "</span></div>" +
+        '<small>Arrivée vers ' + heureTxt(r.duration) + " · " + distTxt(vol) + " à vol d'oiseau" + (vol > 50 ? " (détour × " + fmt(r.distance / vol, 1) + ")" : "") + "</small>" +
+      "</div></div>" +
+      (!choix && nbCompares ? '<p class="thint">✔ Poste le plus proche <b>par les rues</b>, comparé aux ' + nbCompares + " postes accessibles.</p>" : "") +
+      '<div class="iti-h">Feuille de route · ' + steps.length + " étapes</div>" +
       '<ol class="iti-steps">' + steps.map(function (x, i) {
         const loc = x.st.maneuver && x.st.maneuver.location;
-        return '<li data-i="' + i + '"' + (loc ? ' data-lat="' + loc[1] + '" data-lon="' + loc[0] + '"' : "") + "><span>" + esc(consigne(x.st, x.dernier)) + "</span>" +
-          (x.st.distance > 0 ? "<small>" + distTxt(x.st.distance) + "</small>" : "") + "</li>";
+        return '<li data-i="' + i + '"' + (loc ? ' data-lat="' + loc[1] + '" data-lon="' + loc[0] + '"' : "") + ' tabindex="0">' +
+          '<span class="iti-f">' + fleche(x.st) + "</span><span class=\"iti-c\">" + esc(consigne(x.st)) + "</span>" +
+          (x.distance > 0 ? "<small>" + distTxt(x.distance) + "</small>" : "") + "</li>";
       }).join("") + "</ol>" +
       '<div class="trow"><a class="tbtn ghost iti-osm" target="_blank" rel="noopener" href="' + lienOSM(a, b, mode) + '">openstreetmap.org ↗</a>' +
       '<button class="tbtn ghost" type="button" id="iti-fiche">Fiche du poste</button></div>' +
-      '<p class="thint">Itinéraire calculé sur le réseau OpenStreetMap (© contributeurs OSM, moteur OSRM). Durée indicative.</p>';
-    $$("#out-iti .iti-steps li[data-lat]").forEach(function (li) {
-      li.addEventListener("click", function () { map.flyTo([Number(li.dataset.lat), Number(li.dataset.lon)], Math.max(map.getZoom(), 17), { duration: 0.5 }); });
+      '<p class="thint">Astuce : faites glisser le marqueur <b>A</b> pour changer le départ. Cliquez une étape pour la voir sur la carte. Réseau © contributeurs OpenStreetMap (moteur OSRM) ; durée indicative.</p>';
+    $$("#out-iti .iti-steps li").forEach(function (li) {
+      const voir = function () {
+        $$("#out-iti .iti-steps li").forEach(function (x) { x.classList.toggle("on", x === li); });
+        const x = steps[Number(li.dataset.i)]; ITI.surbrillance.clearLayers();
+        if (x.coords.length > 1) {
+          const seg = L.polyline(x.coords.map(function (c) { return [c[1], c[0]]; }), { pane: "outils", color: "#facc15", weight: 7, opacity: 1, lineCap: "round" }).addTo(ITI.surbrillance);
+          map.fitBounds(seg.getBounds(), { padding: [80, 80], maxZoom: 18 });
+        } else if (li.dataset.lat) map.flyTo([Number(li.dataset.lat), Number(li.dataset.lon)], Math.max(map.getZoom(), 17), { duration: 0.5 });
+        if (li.dataset.lat) L.circleMarker([Number(li.dataset.lat), Number(li.dataset.lon)], { pane: "outils", radius: 7, color: "#0b2237", weight: 3, fillColor: "#facc15", fillOpacity: 1 }).addTo(ITI.surbrillance);
+      };
+      li.addEventListener("click", voir);
+      li.addEventListener("keydown", function (e) { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); voir(); } });
     });
     $("#iti-fiche").addEventListener("click", function () { selectPoste(p.id); });
+    const box = $("#drawer-analyse .dr-body"), res = $("#out-iti");
+    if (box && res) box.scrollTo({ top: res.offsetTop - box.offsetTop - 8, behavior: "smooth" });
   }
 
   function departMaPosition() {
-    if (!navigator.geolocation) { toast("Votre appareil ne permet pas la localisation : cliquez sur la carte pour choisir le départ.", "err"); departSurCarte(); return; }
-    $("#out-iti").innerHTML = '<p class="thint">Localisation en cours… autorisez-la si le navigateur le demande.</p>';
+    if (!navigator.geolocation) { toast("Votre appareil ne permet pas la localisation : cliquez sur la carte ou choisissez un quartier.", "err"); departSurCarte(); return; }
+    $("#out-iti").innerHTML = '<p class="thint iti-wait"><span class="spin"></span> Localisation en cours… autorisez-la si le navigateur le demande.</p>';
     navigator.geolocation.getCurrentPosition(function (pos) {
-      calculerItineraire(L.latLng(pos.coords.latitude, pos.coords.longitude));
+      const ll = L.latLng(pos.coords.latitude, pos.coords.longitude), loin = horsZone(ll);
+      if (loin) {
+        $("#out-iti").innerHTML = '<p class="iti-err">Votre position est à environ <b>' + distTxt(loin) + "</b> de Thiès, hors de la zone d'étude. " +
+          "Choisissez le départ <b>sur la carte</b> ou <b>dans la liste des quartiers</b>.</p>";
+        departSurCarte(true); return;
+      }
+      const prec = Math.round(pos.coords.accuracy || 0);
+      if (prec > 1500) {                                        // ordinateur sans GPS : position devinee par l'adresse Internet
+        $("#out-iti").innerHTML = '<p class="iti-err">Position <b>imprécise</b> (± ' + distTxt(prec) + ") : sur un ordinateur sans GPS, le navigateur devine la position " +
+          "à partir de la connexion Internet. Cliquez plutôt <b>sur la carte</b> à l'endroit où vous êtes, ou choisissez votre <b>quartier</b>.</p>" +
+          '<button class="tbtn ghost block" type="button" id="iti-quand-meme">Utiliser quand même cette position</button>';
+        $("#iti-quand-meme").addEventListener("click", function () { if (S.tool === "iti") setTool("iti"); calculerItineraire(ll, "Ma position (± " + distTxt(prec) + ")"); });
+        departSurCarte(true); return;
+      }
+      calculerItineraire(ll, "Ma position (précision ± " + distTxt(prec) + ")");
     }, function (err) {
-      toast(err.code === 1 ? "Localisation refusée : cliquez sur la carte pour choisir le départ." : "Position introuvable : cliquez sur la carte pour choisir le départ.", "err");
+      toast(err.code === 1 ? "Localisation refusée : cliquez sur la carte ou choisissez un quartier." : "Position introuvable : cliquez sur la carte ou choisissez un quartier.", "err");
       departSurCarte();
-    }, { enableHighAccuracy: true, timeout: 15000, maximumAge: 30000 });
+    }, { enableHighAccuracy: true, timeout: 15000, maximumAge: 5000 });
   }
-  function departSurCarte() {
+  function departSurCarte(garderMessage) {
     if (S.tool !== "iti") setTool("iti");
-    $("#out-iti").innerHTML = '<p class="thint">👆 Cliquez sur la carte à l\'endroit du départ.</p>';
+    if (!garderMessage) $("#out-iti").innerHTML = '<p class="thint">👆 Cliquez sur la carte à l\'endroit du départ.</p>';
+  }
+  /* ouvre le tiroir en mode « itineraire seul » */
+  function ouvrirItineraire() {
+    const dr = $("#drawer-analyse");
+    dr.classList.remove("hidden"); dr.classList.add("focus-iti");
+    $("#drawer-analyse .dr-h h3").textContent = "🧭 Itinéraire";
+    $("#tool-iti-card").scrollIntoView({ block: "nearest" });
   }
   /* ouvre l'outil depuis une fiche ou un tableau : destination = poste donne */
   function itineraireVers(posteId, depart) {
-    $("#drawer-analyse").classList.remove("hidden");
+    ouvrirItineraire();
     $("#iti-poste").value = posteId ? String(posteId) : "";
-    $("#tool-iti-card").scrollIntoView({ block: "nearest" });
-    if (depart) calculerItineraire(depart); else departMaPosition();
+    if (depart) calculerItineraire(depart, "Point choisi"); else if (ITI.depart) calculerItineraire(); else departMaPosition();
   }
 
   function initItineraire() {
+    MODES.foot.coul = "#22d3ee"; MODES.car.coul = "#a78bfa"; MODES.bike.coul = "#4ade80";
     S.postes.features.map(function (f) { return f.properties; }).sort(function (a, b) { return (a.numero || 0) - (b.numero || 0); })
       .forEach(function (p) { $("#iti-poste").add(new Option((p.numero != null ? p.numero + " · " : "") + p.nom, p.id)); });
+    S.quartiers.features.slice().sort(function (a, b) { return String(a.properties.nom).localeCompare(String(b.properties.nom), "fr"); })
+      .forEach(function (f) { $("#iti-quartier").add(new Option(f.properties.nom + (f.properties.commune ? " (" + f.properties.commune + ")" : ""), f.properties.id)); });
+    $("#iti-quartier").addEventListener("change", function () {
+      const id = this.value; if (!id) return;
+      const f = S.quartiers.features.filter(function (x) { return String(x.properties.id) === id; })[0]; if (!f) return;
+      const lay = L.geoJSON(f), c = lay.getBounds().getCenter();
+      // point dans le quartier : centre de l'emprise s'il est dedans, sinon premier sommet
+      let pt = c;
+      try { const g = f.geometry, ring = (g.type === "MultiPolygon" ? g.coordinates[0][0] : g.coordinates[0]);
+        if (!dansAnneau([c.lng, c.lat], ring)) { const s = ring.reduce(function (acc, v) { return [acc[0] + v[0], acc[1] + v[1]]; }, [0, 0]); pt = L.latLng(s[1] / ring.length, s[0] / ring.length); } } catch (e) {}
+      if (S.tool === "iti") setTool("iti");
+      calculerItineraire(pt, "Quartier " + f.properties.nom);
+      this.value = "";
+    });
     $$("#proche-modes .seg-m").forEach(function (b) {
       b.addEventListener("click", function () {
         ITI.mode = b.dataset.mode;
@@ -853,14 +962,22 @@
       b.addEventListener("click", function () {
         ITI.mode = b.dataset.mode;
         $$("#iti-modes .seg-m, #proche-modes .seg-m").forEach(function (x) { const on = x.dataset.mode === b.dataset.mode; x.classList.toggle("on", on); x.setAttribute("aria-pressed", on ? "true" : "false"); });
-        if (ITI.depart && ITI.couche) calculerItineraire();
+        if (ITI.depart) calculerItineraire();
       });
     });
-    $("#iti-gps").addEventListener("click", departMaPosition);
+    $("#iti-gps").addEventListener("click", function () { if (S.tool === "iti") setTool("iti"); departMaPosition(); });
     $("#iti-carte").addEventListener("click", function () { if (S.tool === "iti") setTool("iti"); else departSurCarte(); });
-    $("#iti-clear").addEventListener("click", function () { effacerItineraire(); ITI.depart = null; if (S.tool === "iti") setTool("iti"); });
-    $("#iti-poste").addEventListener("change", function () { if (ITI.depart && ITI.couche) calculerItineraire(); });
-    $("#mt-iti").addEventListener("click", function () { $("#drawer-analyse").classList.remove("hidden"); $("#tool-iti-card").scrollIntoView({ block: "nearest" }); });
+    $("#iti-clear").addEventListener("click", function () { itiJeton++; effacerItineraire(); ITI.depart = null; if (S.tool === "iti") setTool("iti"); });
+    $("#iti-poste").addEventListener("change", function () { if (ITI.depart) calculerItineraire(); });
+    $("#mt-iti").addEventListener("click", ouvrirItineraire);
+  }
+  function dansAnneau(pt, ring) {
+    let dedans = false;
+    for (let i = 0, j = ring.length - 1; i < ring.length; j = i++) {
+      const xi = ring[i][0], yi = ring[i][1], xj = ring[j][0], yj = ring[j][1];
+      if (((yi > pt[1]) !== (yj > pt[1])) && (pt[0] < (xj - xi) * (pt[1] - yi) / (yj - yi) + xi)) dedans = !dedans;
+    }
+    return dedans;
   }
 
   /* ------------------------------------------------------------------ barre d'outils (zoom, mesure, localisation, impression) */
@@ -1029,7 +1146,10 @@
   function initInterface() {
     S.filtreFlux = L.layerGroup().addTo(map);
     const basculer = function (el) { return el.classList.toggle("hidden") === false; };
-    $("#mt-analyse").addEventListener("click", function () { basculer($("#drawer-analyse")); });
+    $("#mt-analyse").addEventListener("click", function () {
+      const dr = $("#drawer-analyse");
+      if (dr.classList.contains("focus-iti") && !dr.classList.contains("hidden")) { dr.classList.remove("focus-iti"); $("#drawer-analyse .dr-h h3").textContent = "🧭 Outils d'analyse"; return; }
+      dr.classList.remove("focus-iti"); $("#drawer-analyse .dr-h h3").textContent = "🧭 Outils d'analyse"; basculer(dr); });
     $("#drawer-close").addEventListener("click", function () { $("#drawer-analyse").classList.add("hidden"); });
     $("#mt-legende").addEventListener("click", function () { basculer($("#map-legend")); });
     $("#legend-close").addEventListener("click", function () { $("#map-legend").classList.add("hidden"); });
@@ -1141,7 +1261,7 @@
     map.on("click", function (e) {
       if (S.tool === "proche") plusProche(e.latlng);
       else if (S.tool === "mesure") ajouterMesure(e.latlng);
-      else if (S.tool === "iti") { setTool("iti"); calculerItineraire(e.latlng); }
+      else if (S.tool === "iti") { setTool("iti"); calculerItineraire(e.latlng, "Point choisi sur la carte"); }
     });
     map.on("dblclick", function () {
       if (S.tool === "mesure" && S.mesure && S.mesure.pts.length > 1) {

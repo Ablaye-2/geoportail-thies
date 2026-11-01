@@ -169,7 +169,7 @@
     $("#l-reel").innerHTML = '<div class="stat-tiles">' + tuile(rv.plus_petite.length, "aires réelles plus petites que l'aire administrative") +
       tuile(rv.plus_grande.length, "plus grandes") + tuile(rv.identique.length, "identiques") + tuile(fmt(rv.superficie_reelle_km2, 1) + " km²", "couverts par les aires réelles (" + fmt(100 * rv.superficie_reelle_km2 / d.superficie_ville_km2) + " % de la ville)") + "</div>" +
       '<p class="hint"><b>Plus grandes :</b> ' + rv.plus_grande.map(esc).join(", ") + (rv.sans.length ? " · <b>sans aire réelle :</b> " + rv.sans.map(esc).join(", ") : "") +
-      ". Thiès Nonè : aire administrative de 25,8 km², alors que son aire réelle se limite aux abords du poste.</p>";
+      ". Thiès None : aire administrative de 25,8 km², alors que son aire réelle se limite aux abords du poste.</p>";
     // maille x K-means
     const TM = ["Fortement sous-dotée", "Sous-dotée", "Conforme"], KK = ["K1", "K2", "K3"];
     const cnt = function (t, k) { return d.maille_classe.filter(function (x) { return x.type_maille === t && x.classe_kmeans === k; }).reduce(function (a, x) { return a + x.n; }, 0); };
