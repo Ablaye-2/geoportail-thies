@@ -249,3 +249,10 @@ html[data-theme="light"] body.page-accueil .src b { color: #0f172a; }
 
 html[data-theme="light"] .edge-tog, html[data-theme="light"] .map-max { background: rgba(255, 255, 255, .94); color: #0f172a; border-color: rgba(15, 23, 42, .14); }
 html[data-theme="light"] .edge-tog:hover, html[data-theme="light"] .map-max:hover { background: #0f766e; color: #fff; }
+
+html[data-theme="light"] .iti-lab { color: #334155; }
+html[data-theme="light"] .iti-dep { color: #1d4ed8; }
+html[data-theme="light"] .iti-chiffres .big { color: #0e7490; }
+html[data-theme="light"] .iti-km { color: #0f172a; }
+html[data-theme="light"] .iti-f { background: rgba(14, 116, 144, .12); color: #0e7490; }
+html[data-theme="light"] .iti-steps li.on { background: rgba(250, 204, 21, .25); }

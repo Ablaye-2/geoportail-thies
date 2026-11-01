@@ -401,3 +401,45 @@ body.hide-left.hide-right .cockpit { grid-template-columns: minmax(0, 1fr); }
 body.map-maxi .kpirow { display: none; }
 body.map-maxi .cockpit { padding: 8px; gap: 8px; }
 @media (max-width: 1100px) { .edge-tog, .map-max { display: none; } body.hide-left .lcol, body.hide-right .rcol { display: block; } }
+
+/* ---------- itineraire v19 : formulaire en 3 etapes, marqueurs A/B, feuille de route ---------- */
+.drawer.focus-iti .dr-body > .tcard:not(#tool-iti-card) { display: none; }
+.drawer.focus-iti #tool-iti-card { border: 0; background: none; padding: 0; }
+.drawer.focus-iti #tool-iti-card > .tlbl { display: none; }
+.iti-form { list-style: none; margin: 8px 0 4px; padding: 0; display: grid; gap: 10px; }
+.iti-form > li { display: grid; grid-template-columns: 24px 1fr; gap: 9px; align-items: start; }
+.iti-n { width: 24px; height: 24px; border-radius: 50%; background: linear-gradient(135deg, #14b8a6, #0ea5a0); color: #fff; font-weight: 800; font-size: 12px; display: grid; place-items: center; margin-top: 1px; }
+.iti-lab { display: block; font-size: 12px; font-weight: 700; color: #cfe3ee; margin: 3px 0 6px; }
+.iti-form .seg-mode { margin: 0; }
+.iti-form .trow { margin: 0 0 6px; }
+.iti-form select { width: 100%; }
+.iti-dep { font-size: 12px; color: #93c5fd; margin: 6px 0 0; min-height: 0; }
+.iti-dep:empty { display: none; }
+.iti-wait { display: flex; align-items: center; gap: 8px; }
+.spin { width: 14px; height: 14px; border-radius: 50%; border: 2px solid rgba(45, 212, 191, .3); border-top-color: #2dd4bf; animation: itispin .8s linear infinite; flex: 0 0 auto; }
+@keyframes itispin { to { transform: rotate(360deg); } }
+.iti-sum { align-items: flex-start; padding: 11px 12px; }
+.iti-sum-t { flex: 1; min-width: 0; }
+.iti-dest { display: flex; align-items: center; gap: 7px; font-size: 13.5px; }
+.iti-num { background: #dc2626; color: #fff; border-radius: 6px; font-size: 11px; font-weight: 800; padding: 1px 6px; }
+.iti-chiffres { display: flex; align-items: baseline; gap: 10px; margin: 3px 0 2px; }
+.iti-chiffres .big { font-size: 24px; font-weight: 800; color: #67e8f9; }
+.iti-km { font-size: 15px; font-weight: 700; color: #e2e8f0; }
+.iti-sum small { color: var(--mut); font-size: 11.5px; }
+.iti-h { font-size: 11.5px; font-weight: 800; letter-spacing: .04em; text-transform: uppercase; color: var(--mut); margin: 12px 0 2px; }
+.iti-steps { max-height: 320px; counter-reset: none; }
+.iti-steps li { counter-increment: none; align-items: center; gap: 9px; padding: 7px 6px; }
+.iti-steps li::before { content: none; }
+.iti-f { flex: 0 0 26px; height: 26px; border-radius: 8px; background: rgba(34, 211, 238, .16); color: #a5f3fc; font-size: 15px; font-weight: 800; display: grid; place-items: center; }
+.iti-steps li:first-child .iti-f { background: #2563eb; color: #fff; font-size: 10px; }
+.iti-steps li:last-child .iti-f { background: #dc2626; color: #fff; font-size: 13px; }
+.iti-c { flex: 1; line-height: 1.35; }
+.iti-steps li.on { background: rgba(250, 204, 21, .16); outline: 1px solid rgba(250, 204, 21, .5); }
+.iti-steps li:focus-visible { outline: 2px solid #2dd4bf; }
+.iti-pin { background: none; border: 0; }
+.iti-pin span { display: grid; place-items: center; width: 30px; height: 30px; border-radius: 50% 50% 50% 0; transform: rotate(-45deg); background: var(--c); border: 3px solid #fff;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, .45); color: #fff; font-weight: 800; font-size: 14px; }
+.iti-pin i { transform: rotate(45deg); font-style: normal; }
+.leaflet-marker-draggable.iti-pin { cursor: grab; }
+.iti-steps li span.iti-f { flex: 0 0 26px; width: 26px; }
+.iti-steps li span.iti-c { flex: 1 1 auto; }
