@@ -143,6 +143,7 @@ DEFAULT_AUTO_FIELD = "django.db.models.BigAutoField"
 SECURE_REFERRER_POLICY = "strict-origin-when-cross-origin"
 
 # --- Habillage du geoportail (en-tete / pied de page) ---
+GEOPORTAIL_VERSION = "21"                  # a augmenter a chaque mise a jour des CSS / JS (vide le cache des navigateurs)
 GEOPORTAIL_INSTITUTION = "Ville de Thiès"   # nom affiche sous le titre et dans le pied de page
 GEOPORTAIL_LOGO = ""                         # ex. "portail/img/logo.png" (fichier dans portail/static/) ; vide = croix verte
 GEOPORTAIL_CREDITS = ""                      # ex. "Réalisé par ... – Université ..." (facultatif)
